@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Xmark, Person, Cup, Play, Key, Lock, CircleCheckFill, Shield, CircleInfo } from '@gravity-ui/icons';
+import { Button, Card, Chip, Alert, Typography } from '@heroui/react';
+import { Xmark, Lock, CircleInfo } from '@gravity-ui/icons';
 import { useAuth } from '../context/AuthContext';
 import { getUserGradient } from '../Gradient/gradient';
 
@@ -62,12 +63,15 @@ export default function ProfileModal({ isOpen, onClose }) {
             className="bg-neutral-900 border border-neutral-800 rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl relative text-left max-h-[90vh] flex flex-col"
           >
             {/* Close Button */}
-            <button
+            <Button
+              type="button"
+              variant="tertiary"
+              size="sm"
               onClick={onClose}
               className="absolute top-5 right-5 p-1.5 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-xl transition-colors cursor-pointer"
             >
               <Xmark className="w-5 h-5" />
-            </button>
+            </Button>
 
             {/* User Profile Header */}
             <div className="flex items-center gap-4 mb-6 pb-5 border-b border-neutral-800">
@@ -80,49 +84,51 @@ export default function ProfileModal({ isOpen, onClose }) {
 
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-xl font-bold text-white">{user?.username || 'Player'}</h3>
+                  <Typography.Heading level={3} className="text-xl font-bold text-white">
+                    {user?.username || 'Player'}
+                  </Typography.Heading>
                   {user?.isGuest ? (
-                    <span className="text-[10px] bg-neutral-800 text-neutral-300 border border-neutral-700 px-2 py-0.5 rounded-md font-semibold">
+                    <Chip size="sm" className="bg-neutral-800 text-neutral-300 border border-neutral-700 text-[10px] font-semibold">
                       Guest
-                    </span>
+                    </Chip>
                   ) : (
-                    <span className="text-[10px] bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded-md font-semibold">
+                    <Chip size="sm" className="bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[10px] font-semibold">
                       Verified Member
-                    </span>
+                    </Chip>
                   )}
                 </div>
-                <p className="text-xs text-neutral-400 mt-0.5">
+                <Typography className="text-xs text-neutral-400 mt-0.5">
                   {user?.isGuest ? 'Temporary Session' : (user?.email || 'Registered User')}
-                </p>
+                </Typography>
               </div>
             </div>
 
             <div className="flex-1 overflow-y-auto space-y-6 pr-1 scrollbar-thin">
               {/* Detailed Game Stats Grid */}
               <div>
-                <h4 className="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-3">
+                <Typography.Heading level={4} className="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-3">
                   Match Statistics
-                </h4>
+                </Typography.Heading>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  <div className="bg-neutral-800/60 p-3 rounded-2xl border border-neutral-800 text-center">
+                  <Card className="bg-neutral-800/60 p-3 rounded-2xl border border-neutral-800 text-center">
                     <span className="text-[11px] text-neutral-400 block mb-1">Played</span>
                     <span className="text-lg font-bold text-white">{gamesPlayed}</span>
-                  </div>
+                  </Card>
 
-                  <div className="bg-neutral-800/60 p-3 rounded-2xl border border-neutral-800 text-center">
+                  <Card className="bg-neutral-800/60 p-3 rounded-2xl border border-neutral-800 text-center">
                     <span className="text-[11px] text-amber-400 block mb-1">Victories</span>
                     <span className="text-lg font-bold text-amber-400">{wins}</span>
-                  </div>
+                  </Card>
 
-                  <div className="bg-neutral-800/60 p-3 rounded-2xl border border-neutral-800 text-center">
+                  <Card className="bg-neutral-800/60 p-3 rounded-2xl border border-neutral-800 text-center">
                     <span className="text-[11px] text-blue-400 block mb-1">Win Rate</span>
                     <span className="text-lg font-bold text-blue-400">{winRate}%</span>
-                  </div>
+                  </Card>
 
-                  <div className="bg-neutral-800/60 p-3 rounded-2xl border border-neutral-800 text-center">
+                  <Card className="bg-neutral-800/60 p-3 rounded-2xl border border-neutral-800 text-center">
                     <span className="text-[11px] text-emerald-400 block mb-1">Score</span>
                     <span className="text-lg font-bold text-emerald-400">{score}</span>
-                  </div>
+                  </Card>
                 </div>
               </div>
 
@@ -131,21 +137,21 @@ export default function ProfileModal({ isOpen, onClose }) {
                 <div className="pt-2 border-t border-neutral-800">
                   <div className="flex items-center gap-2 mb-3">
                     <Lock className="w-4 h-4 text-neutral-400" />
-                    <h4 className="text-xs font-bold text-neutral-300 uppercase tracking-wider">
+                    <Typography.Heading level={4} className="text-xs font-bold text-neutral-300 uppercase tracking-wider">
                       Change Password
-                    </h4>
+                    </Typography.Heading>
                   </div>
 
                   {error && (
-                    <div className="p-3 mb-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 text-xs font-medium">
+                    <Alert status="danger" className="p-3 mb-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-300 text-xs font-medium">
                       {error}
-                    </div>
+                    </Alert>
                   )}
 
                   {success && (
-                    <div className="p-3 mb-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-300 text-xs font-medium">
+                    <Alert status="success" className="p-3 mb-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-300 text-xs font-medium">
                       {success}
-                    </div>
+                    </Alert>
                   )}
 
                   <form onSubmit={handlePasswordChange} className="space-y-3">
@@ -159,7 +165,7 @@ export default function ProfileModal({ isOpen, onClose }) {
                         value={currentPassword}
                         onChange={(e) => setCurrentPassword(e.target.value)}
                         placeholder="Enter current password"
-                        className="w-full px-3.5 py-2 bg-neutral-800 border border-neutral-700 rounded-xl text-white text-xs focus:outline-none focus:border-blue-500 transition-colors"
+                        className="w-full px-3.5 py-2.5 bg-neutral-800/90 border border-neutral-700 rounded-xl text-white text-xs focus:outline-none focus:border-blue-500 transition-colors"
                       />
                     </div>
 
@@ -175,7 +181,7 @@ export default function ProfileModal({ isOpen, onClose }) {
                           value={newPassword}
                           onChange={(e) => setNewPassword(e.target.value)}
                           placeholder="Min. 8 characters"
-                          className="w-full px-3.5 py-2 bg-neutral-800 border border-neutral-700 rounded-xl text-white text-xs focus:outline-none focus:border-blue-500 transition-colors"
+                          className="w-full px-3.5 py-2.5 bg-neutral-800/90 border border-neutral-700 rounded-xl text-white text-xs focus:outline-none focus:border-blue-500 transition-colors"
                         />
                       </div>
 
@@ -190,30 +196,31 @@ export default function ProfileModal({ isOpen, onClose }) {
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
                           placeholder="Repeat new password"
-                          className="w-full px-3.5 py-2 bg-neutral-800 border border-neutral-700 rounded-xl text-white text-xs focus:outline-none focus:border-blue-500 transition-colors"
+                          className="w-full px-3.5 py-2.5 bg-neutral-800/90 border border-neutral-700 rounded-xl text-white text-xs focus:outline-none focus:border-blue-500 transition-colors"
                         />
                       </div>
                     </div>
 
                     <div className="pt-1 text-right">
-                      <button
+                      <Button
                         type="submit"
+                        variant="primary"
                         disabled={loading || !currentPassword || !newPassword || !confirmPassword}
-                        className="px-5 py-2 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold rounded-xl text-xs transition-colors cursor-pointer disabled:opacity-50 shadow-sm"
+                        className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold rounded-xl text-xs transition-colors cursor-pointer disabled:opacity-50 shadow-sm h-auto"
                       >
                         {loading ? 'Updating...' : 'Update Password'}
-                      </button>
+                      </Button>
                     </div>
                   </form>
                 </div>
               ) : (
-                <div className="p-4 bg-neutral-800/40 border border-neutral-800 rounded-2xl text-xs text-neutral-400">
+                <Card className="p-4 bg-neutral-800/40 border border-neutral-800 rounded-2xl text-xs text-neutral-400">
                   <div className="flex items-center gap-1.5 font-semibold text-white mb-1">
                     <CircleInfo className="w-3.5 h-3.5 text-blue-400" />
                     <span>Guest Account</span>
                   </div>
                   You are currently playing on a temporary guest session. Create a registered account to permanently safeguard your match statistics and leaderboard records.
-                </div>
+                </Card>
               )}
             </div>
           </motion.div>

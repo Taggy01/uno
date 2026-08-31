@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Button, Typography, Surface } from '@heroui/react';
-import { CircleCheckFill, Sparkles, ArrowRight, ArrowRotateLeft, CircleInfo } from '@gravity-ui/icons';
+import { Button, Typography, Surface, Alert } from '@heroui/react';
+import { CircleCheckFill, Sparkles, CircleInfo } from '@gravity-ui/icons';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -69,65 +69,64 @@ export default function SignUp() {
 
   return (
     <div className="min-h-screen bg-neutral-950 flex flex-col items-center justify-center p-4 selection:bg-blue-600 selection:text-white">
-      <Surface className="flex min-w-[340px] max-w-md w-full flex-col gap-4 rounded-3xl p-8 border border-neutral-800 bg-neutral-900 shadow-2xl" variant="default">
+      <Surface className="flex min-w-[340px] max-w-md w-full flex-col gap-5 rounded-3xl p-8 border border-neutral-800 bg-neutral-900 shadow-2xl" variant="default">
         <div className="flex flex-col text-left">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-2xl bg-red-600 flex items-center justify-center font-black text-white text-xs shadow-md">
               UNO
             </div>
-            <h2 className="text-2xl font-bold tracking-tight text-white">
+            <Typography.Heading level={2} className="text-2xl font-bold tracking-tight text-white">
               {step === 'details' ? 'Create Account' : 'Verify Email'}
-            </h2>
+            </Typography.Heading>
           </div>
-          <p className="text-sm text-neutral-400">
+          <Typography className="text-sm text-neutral-400">
             {step === 'details'
               ? 'Enter your details to receive an email verification code'
               : `Enter the 6-digit OTP code sent to ${email}`}
-          </p>
+          </Typography>
         </div>
 
         {error && (
-          <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-2xl text-rose-400 text-xs font-medium">
+          <Alert status="danger" className="rounded-2xl border border-rose-500/30 bg-rose-500/10 text-rose-300 text-xs font-medium py-2.5 px-3.5 text-left">
             {error}
-          </div>
+          </Alert>
         )}
 
         {successMsg && (
-          <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-emerald-300 text-xs font-medium flex items-center gap-2">
+          <Alert status="success" className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-xs font-medium py-2.5 px-3.5 flex items-center gap-2 text-left">
             <CircleInfo className="w-4 h-4 flex-shrink-0 text-emerald-400" />
             <span>{successMsg}</span>
-          </div>
+          </Alert>
         )}
 
-
         {step === 'details' ? (
-          <form onSubmit={handleSendOtp} className="flex flex-col gap-4">
-            <div>
-              <label className="text-xs font-semibold text-neutral-300 block mb-1">Username</label>
+          <form onSubmit={handleSendOtp} className="flex flex-col gap-4 text-left">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-neutral-300 block">Username</label>
               <input
                 type="text"
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="e.g. MasterGamer"
-                className="w-full px-4 py-2.5 bg-neutral-800 border border-neutral-700 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                className="w-full px-4 py-3 bg-neutral-800/90 border border-neutral-700 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all placeholder:text-neutral-500"
               />
             </div>
 
-            <div>
-              <label className="text-xs font-semibold text-neutral-300 block mb-1">Email</label>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-neutral-300 block">Email</label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="example@example.com"
-                className="w-full px-4 py-2.5 bg-neutral-800 border border-neutral-700 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                className="w-full px-4 py-3 bg-neutral-800/90 border border-neutral-700 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all placeholder:text-neutral-500"
               />
             </div>
 
-            <div>
-              <label className="text-xs font-semibold text-neutral-300 block mb-1">Password</label>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-neutral-300 block">Password</label>
               <input
                 type="password"
                 required
@@ -135,40 +134,44 @@ export default function SignUp() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="At least 8 characters"
-                className="w-full px-4 py-2.5 bg-neutral-800 border border-neutral-700 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                className="w-full px-4 py-3 bg-neutral-800/90 border border-neutral-700 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all placeholder:text-neutral-500"
               />
             </div>
 
             <div className="flex gap-3 pt-2">
-              <button
+              <Button
                 type="submit"
+                variant="primary"
                 disabled={loading}
-                className="w-1/2 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-md"
+                className="w-1/2 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-md h-auto"
               >
                 <span>{loading ? 'Sending OTP...' : 'Continue →'}</span>
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
-                className="w-1/2 bg-neutral-800 hover:bg-neutral-700 active:bg-neutral-750 text-neutral-200 border border-neutral-700 font-semibold py-2.5 px-4 rounded-xl transition-colors cursor-pointer"
+                variant="secondary"
+                className="w-1/2 bg-neutral-800 hover:bg-neutral-700 active:bg-neutral-750 text-neutral-200 border border-neutral-700 font-semibold py-3 px-4 rounded-xl transition-colors cursor-pointer h-auto"
                 onClick={() => navigate('/login')}
               >
                 Log In
-              </button>
+              </Button>
             </div>
 
             <div className="pt-2 border-t border-neutral-800 text-center">
-              <button
+              <Button
                 type="button"
+                variant="tertiary"
+                size="sm"
                 onClick={handleGuest}
-                className="inline-flex items-center gap-1 text-xs text-neutral-400 hover:text-blue-400 transition-colors underline cursor-pointer"
+                className="inline-flex items-center gap-1 text-xs text-neutral-400 hover:text-blue-400 transition-colors cursor-pointer p-0 h-auto"
               >
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>Skip for now, play as Guest →</span>
-              </button>
+              </Button>
             </div>
           </form>
         ) : (
-          <form onSubmit={handleVerifyOtp} className="flex flex-col gap-4">
+          <form onSubmit={handleVerifyOtp} className="flex flex-col gap-4 text-left">
             <div>
               <label className="text-xs font-semibold text-neutral-300 block mb-1">6-Digit Email Code</label>
               <input
@@ -178,7 +181,7 @@ export default function SignUp() {
                 value={otp}
                 onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
                 placeholder="123456"
-                className="w-full px-4 py-3 bg-neutral-800 border border-neutral-700 rounded-2xl text-white font-mono text-center tracking-widest text-xl focus:outline-none focus:border-blue-500 transition-colors"
+                className="w-full px-4 py-3.5 bg-neutral-800/90 border border-neutral-700 rounded-2xl text-white font-mono text-center tracking-widest text-xl focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
                 autoFocus
               />
               <p className="text-[11px] text-neutral-500 mt-1.5">
@@ -187,31 +190,36 @@ export default function SignUp() {
             </div>
 
             <div className="flex items-center justify-between text-xs">
-              <button
+              <Button
                 type="button"
+                variant="tertiary"
+                size="sm"
                 onClick={() => setStep('details')}
-                className="text-neutral-400 hover:text-white underline cursor-pointer"
+                className="text-neutral-400 hover:text-white p-0 h-auto cursor-pointer"
               >
                 ← Edit details
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="tertiary"
+                size="sm"
                 onClick={handleResendOtp}
                 disabled={loading}
-                className="text-blue-400 hover:text-blue-300 underline cursor-pointer disabled:opacity-50"
+                className="text-blue-400 hover:text-blue-300 p-0 h-auto cursor-pointer disabled:opacity-50"
               >
                 Resend code
-              </button>
+              </Button>
             </div>
 
-            <button
+            <Button
               type="submit"
+              variant="primary"
               disabled={otp.length !== 6 || loading}
-              className="w-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl transition-colors shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              className="w-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-xl transition-colors shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 h-auto"
             >
               <CircleCheckFill className="w-4 h-4" />
               <span>{loading ? 'Verifying...' : 'Verify & Create Account'}</span>
-            </button>
+            </Button>
           </form>
         )}
       </Surface>

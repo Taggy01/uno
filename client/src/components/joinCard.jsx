@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Card, Typography } from "@heroui/react";
+import { Button, Card, Alert } from "@heroui/react";
 import { Magnifier, ArrowRight } from '@gravity-ui/icons';
 import { useNavigate } from "react-router-dom";
 
@@ -38,7 +38,7 @@ export default function JoinCard() {
 
   return (
     <div className="w-full max-w-lg">
-      <Card className="w-full border border-neutral-800 bg-neutral-900 rounded-3xl p-4 sm:p-6 hover:border-neutral-700 transition-all shadow-xl">
+      <Card className="w-full border border-neutral-800 bg-neutral-900 rounded-3xl p-4 sm:p-6 hover:border-neutral-700 transition-all shadow-xl text-left">
         <Card.Header className="pb-2">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center border border-blue-500/20">
@@ -56,9 +56,9 @@ export default function JoinCard() {
         <Card.Content className="pt-4">
           <form onSubmit={handleJoin} className="space-y-3">
             {error && (
-              <div className="p-2.5 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-xs font-medium">
+              <Alert status="danger" className="p-2.5 bg-red-500/10 border border-red-500/30 rounded-xl text-red-300 text-xs font-medium">
                 {error}
-              </div>
+              </Alert>
             )}
 
             <div className="flex flex-col sm:flex-row gap-3">
@@ -72,14 +72,15 @@ export default function JoinCard() {
                     if (error) setError('');
                   }}
                   placeholder="e.g. 54321"
-                  className="w-full px-4 py-3 bg-neutral-800 border border-neutral-700 rounded-2xl text-white font-mono text-center sm:text-left tracking-widest text-base focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all uppercase placeholder:normal-case placeholder:tracking-normal placeholder:text-neutral-500"
+                  className="w-full px-4 py-3 bg-neutral-800/90 border border-neutral-700 rounded-2xl text-white font-mono text-center sm:text-left tracking-widest text-base focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all uppercase placeholder:normal-case placeholder:tracking-normal placeholder:text-neutral-500"
                 />
               </div>
 
-              <button
+              <Button
                 type="submit"
+                variant="primary"
                 disabled={!code.trim() || loading}
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold rounded-2xl transition-colors shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 whitespace-nowrap text-sm"
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold rounded-2xl transition-colors shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 whitespace-nowrap text-sm h-auto"
               >
                 {loading ? (
                   <span>Finding...</span>
@@ -89,7 +90,7 @@ export default function JoinCard() {
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
-              </button>
+              </Button>
             </div>
           </form>
         </Card.Content>

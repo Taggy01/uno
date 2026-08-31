@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, Typography, Dropdown, Button, Avatar } from "@heroui/react";
+import { Typography, Dropdown, Button, Avatar, Chip } from "@heroui/react";
 import { ArrowRightFromSquare, CircleQuestion, Cup, Play, Person, Shield } from '@gravity-ui/icons';
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -21,7 +21,7 @@ export default function Navbar() {
     <>
       <div className="flex justify-between items-center px-6 py-3.5 border-b border-neutral-800 backdrop-blur-md sticky top-0 z-40 bg-neutral-900/80">
         {/* Left: Brand Logo */}
-        <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
+        <div className="flex items-center gap-3 cursor-pointer select-none" onClick={() => navigate('/')}>
           <div className="w-9 h-9 rounded-xl bg-red-600 flex items-center justify-center shadow-md">
             <span className="font-black text-white text-sm tracking-wider">UNO</span>
           </div>
@@ -33,9 +33,12 @@ export default function Navbar() {
         {/* Middle: Player Stats & Game Rules */}
         <div className="flex items-center gap-2 sm:gap-3">
           {/* Quick Stats Pill (Clickable -> Opens Profile & Stats) */}
-          <button
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
             onClick={() => setShowProfile(true)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-neutral-800/80 hover:bg-neutral-750 border border-neutral-700/60 text-xs font-semibold text-neutral-300 shadow-sm cursor-pointer transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-neutral-800/80 hover:bg-neutral-750 border border-neutral-700/60 text-xs font-semibold text-neutral-300 shadow-sm cursor-pointer transition-colors h-auto"
             title="View full statistics"
           >
             <div className="flex items-center gap-1">
@@ -49,38 +52,43 @@ export default function Navbar() {
               <span>{gamesPlayed}</span>
               <span className="text-[10px] text-neutral-400 hidden md:inline">Played</span>
             </div>
-          </button>
+          </Button>
 
           {/* Rules / Guide Button */}
-          <button
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
             onClick={() => setShowRules(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-neutral-800 hover:bg-neutral-750 text-neutral-200 border border-neutral-700 text-xs font-semibold transition-colors cursor-pointer shadow-sm"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-neutral-800 hover:bg-neutral-750 text-neutral-200 border border-neutral-700 text-xs font-semibold transition-colors cursor-pointer shadow-sm h-auto"
             title="How to play UNO"
           >
             <CircleQuestion className="w-3.5 h-3.5 text-neutral-400" />
             <span className="hidden sm:inline">Rules</span>
-          </button>
+          </Button>
         </div>
 
         {/* Right: User Profile & Dropdown */}
         <div className="flex items-center gap-3">
           <Dropdown>
-            <Button variant="secondary" className="gap-2 pr-3.5 pl-1.5 py-1 rounded-full border border-neutral-700/60 hover:border-neutral-500 bg-neutral-800/80 text-white cursor-pointer">
-              <Avatar
-                name={user?.username || 'User'}
-                className="w-7 h-7 text-xs text-white font-bold"
-                style={{ background: gradient }}
-              />
-              <span className="font-semibold text-xs sm:text-sm max-w-[100px] sm:max-w-[120px] truncate">
-                {user?.username || 'Player'}
-              </span>
-            </Button>
-            <Dropdown.Popover>
-              <Dropdown.Menu>
+            <Dropdown.Trigger>
+              <Button variant="secondary" className="gap-2 pr-3.5 pl-1.5 py-1 rounded-full border border-neutral-700/60 hover:border-neutral-500 bg-neutral-800/80 text-white cursor-pointer h-auto">
+                <Avatar
+                  name={user?.username || 'User'}
+                  className="w-7 h-7 text-xs text-white font-bold"
+                  style={{ background: gradient }}
+                />
+                <span className="font-semibold text-xs sm:text-sm max-w-[100px] sm:max-w-[120px] truncate">
+                  {user?.username || 'Player'}
+                </span>
+              </Button>
+            </Dropdown.Trigger>
+            <Dropdown.Popover className="bg-neutral-900 border border-neutral-800 rounded-2xl shadow-2xl p-1.5 min-w-[200px]">
+              <Dropdown.Menu className="gap-1">
                 <Dropdown.Item
                   id="user-profile"
                   textValue="View Profile & Stats"
-                  className="justify-between"
+                  className="flex items-center justify-between p-2 rounded-xl text-neutral-300 hover:text-white hover:bg-neutral-800 cursor-pointer"
                   onAction={() => setShowProfile(true)}
                 >
                   <div className="flex flex-col text-left">
@@ -93,23 +101,23 @@ export default function Navbar() {
                 <Dropdown.Item
                   id="stats"
                   textValue="Profile & Password"
-                  className="justify-between"
+                  className="flex items-center justify-between p-2 rounded-xl text-neutral-300 hover:text-white hover:bg-neutral-800 cursor-pointer"
                   onAction={() => setShowProfile(true)}
                 >
-                  <span>Profile & Password</span>
+                  <span className="text-xs">Profile & Stats</span>
                   <Shield className="w-3.5 h-3.5 text-neutral-400" />
                 </Dropdown.Item>
 
                 <Dropdown.Item
                   id="logout"
                   textValue="Switch/Log Out"
-                  className="justify-between text-danger hover:bg-danger/10"
+                  className="flex items-center justify-between p-2 rounded-xl text-rose-400 hover:bg-rose-500/10 cursor-pointer"
                   onAction={() => {
                     logout();
                     navigate('/login');
                   }}
                 >
-                  <span>{user?.isGuest ? 'Log In / Register' : 'Log Out'}</span>
+                  <span className="text-xs font-semibold">{user?.isGuest ? 'Log In / Register' : 'Log Out'}</span>
                   <ArrowRightFromSquare className="w-3.5 h-3.5" />
                 </Dropdown.Item>
               </Dropdown.Menu>

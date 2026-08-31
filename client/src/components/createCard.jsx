@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Card } from "@heroui/react";
+import { Button, Card, Alert, Chip, Typography } from "@heroui/react";
 import { Plus, Xmark } from '@gravity-ui/icons';
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -84,12 +84,13 @@ export default function CreateCard({ externalOpen, onExternalClose }) {
         </Card.Header>
 
         <Card.Content className="pt-4">
-          <button
-            className="w-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold py-3 px-4 rounded-2xl transition-colors shadow-md cursor-pointer"
+          <Button
+            variant="primary"
+            className="w-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold py-3 px-4 rounded-2xl transition-colors shadow-md cursor-pointer h-auto"
             onClick={handleOpenModal}
           >
             Create Room
-          </button>
+          </Button>
         </Card.Content>
       </Card>
 
@@ -98,22 +99,27 @@ export default function CreateCard({ externalOpen, onExternalClose }) {
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in">
           <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-6 max-w-md w-full shadow-2xl relative text-left">
             {/* Close Button */}
-            <button
+            <Button
+              type="button"
+              variant="tertiary"
+              size="sm"
               onClick={handleClose}
               className="absolute top-5 right-5 p-1.5 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-xl transition-colors cursor-pointer"
             >
               <Xmark className="w-5 h-5" />
-            </button>
+            </Button>
 
-            <h3 className="text-2xl font-bold text-white mb-1">Create Match Room</h3>
-            <p className="text-xs text-neutral-400 mb-5">
+            <Typography.Heading level={3} className="text-2xl font-bold text-white mb-1">
+              Create Match Room
+            </Typography.Heading>
+            <Typography className="text-xs text-neutral-400 mb-5">
               Set up your room settings and jump into the lobby.
-            </p>
+            </Typography>
 
             {error && (
-              <div className="p-3 mb-4 bg-rose-500/10 border border-rose-500/30 rounded-2xl text-rose-400 text-xs font-medium">
+              <Alert status="danger" className="p-3 mb-4 bg-rose-500/10 border border-rose-500/30 rounded-2xl text-rose-300 text-xs font-medium">
                 {error}
-              </div>
+              </Alert>
             )}
 
             <form onSubmit={handleCreate} className="space-y-4">
@@ -127,7 +133,7 @@ export default function CreateCard({ externalOpen, onExternalClose }) {
                   value={roomName}
                   onChange={(e) => setRoomName(e.target.value)}
                   placeholder="e.g. Match Room"
-                  className="w-full px-4 py-2.5 bg-neutral-800 border border-neutral-700 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                  className="w-full px-4 py-2.5 bg-neutral-800/90 border border-neutral-700 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
                 />
               </div>
 
@@ -136,9 +142,9 @@ export default function CreateCard({ externalOpen, onExternalClose }) {
                   <label className="text-xs font-semibold text-neutral-300">
                     Max Players
                   </label>
-                  <span className="text-blue-400 font-bold text-xs bg-blue-400/10 px-2 py-0.5 rounded-md border border-blue-400/20">
+                  <Chip size="sm" className="text-blue-400 font-bold text-xs bg-blue-400/10 border border-blue-400/20">
                     {roomSize} Players
-                  </span>
+                  </Chip>
                 </div>
                 <input
                   type="range"
@@ -168,20 +174,22 @@ export default function CreateCard({ externalOpen, onExternalClose }) {
               </div>
 
               <div className="flex gap-3 pt-3">
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
                   onClick={handleClose}
-                  className="w-1/3 py-2.5 bg-neutral-800 hover:bg-neutral-700 active:bg-neutral-750 text-neutral-300 font-bold rounded-xl border border-neutral-700 transition-colors text-sm cursor-pointer"
+                  className="w-1/3 py-3 bg-neutral-800 hover:bg-neutral-750 active:bg-neutral-700 text-neutral-300 font-bold rounded-xl border border-neutral-700 transition-colors text-sm cursor-pointer h-auto"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
+                  variant="primary"
                   disabled={loading}
-                  className="w-2/3 py-2.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold rounded-xl text-sm transition-colors cursor-pointer disabled:opacity-50"
+                  className="w-2/3 py-3 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold rounded-xl text-sm transition-colors cursor-pointer disabled:opacity-50 h-auto"
                 >
                   {loading ? 'Creating Room...' : 'Continue to Lobby →'}
-                </button>
+                </Button>
               </div>
             </form>
           </div>

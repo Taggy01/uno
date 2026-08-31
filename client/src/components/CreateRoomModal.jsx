@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Button, Alert, Chip, Typography } from '@heroui/react';
 import { Xmark, Plus } from '@gravity-ui/icons';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -63,27 +64,34 @@ export default function CreateRoomModal({ isOpen, onClose }) {
             className="bg-neutral-900 border border-neutral-800 rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl relative text-left"
           >
             {/* Close Button */}
-            <button
+            <Button
+              type="button"
+              variant="tertiary"
+              size="sm"
               onClick={onClose}
               className="absolute top-5 right-5 p-1.5 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-xl transition-colors cursor-pointer"
             >
               <Xmark className="w-5 h-5" />
-            </button>
+            </Button>
 
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center text-2xl border border-blue-500/20">
                 <Plus className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-white">Create Match Room</h3>
-                <p className="text-xs text-neutral-400">Configure room settings & invite players</p>
+                <Typography.Heading level={3} className="text-xl font-bold text-white">
+                  Create Match Room
+                </Typography.Heading>
+                <Typography className="text-xs text-neutral-400">
+                  Configure room settings & invite players
+                </Typography>
               </div>
             </div>
 
             {error && (
-              <div className="p-3 mb-4 bg-rose-500/10 border border-rose-500/30 rounded-2xl text-rose-400 text-xs font-medium">
+              <Alert status="danger" className="p-3 mb-4 bg-rose-500/10 border border-rose-500/30 rounded-2xl text-rose-300 text-xs font-medium">
                 {error}
-              </div>
+              </Alert>
             )}
 
             <form onSubmit={handleCreate} className="space-y-4">
@@ -97,7 +105,7 @@ export default function CreateRoomModal({ isOpen, onClose }) {
                   value={roomName}
                   onChange={(e) => setRoomName(e.target.value)}
                   placeholder={`${user?.username || 'Player'}'s Room`}
-                  className="w-full px-4 py-2.5 bg-neutral-800 border border-neutral-700 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                  className="w-full px-4 py-2.5 bg-neutral-800/90 border border-neutral-700 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
                 />
               </div>
 
@@ -106,9 +114,9 @@ export default function CreateRoomModal({ isOpen, onClose }) {
                   <label className="text-xs font-semibold text-neutral-300">
                     Max Players
                   </label>
-                  <span className="text-blue-400 font-bold text-xs bg-blue-400/10 px-2 py-0.5 rounded-md border border-blue-400/20">
+                  <Chip size="sm" className="text-blue-400 font-bold text-xs bg-blue-400/10 border border-blue-400/20">
                     {roomSize} Players
-                  </span>
+                  </Chip>
                 </div>
                 <input
                   type="range"
@@ -138,20 +146,22 @@ export default function CreateRoomModal({ isOpen, onClose }) {
               </div>
 
               <div className="flex gap-3 pt-3">
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
                   onClick={onClose}
-                  className="w-1/3 py-2.5 bg-neutral-800 hover:bg-neutral-700 active:bg-neutral-750 text-neutral-300 font-bold rounded-xl border border-neutral-700 transition-colors text-sm cursor-pointer"
+                  className="w-1/3 py-3 bg-neutral-800 hover:bg-neutral-750 active:bg-neutral-700 text-neutral-300 font-bold rounded-xl border border-neutral-700 transition-colors text-sm cursor-pointer h-auto"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
+                  variant="primary"
                   disabled={loading}
-                  className="w-2/3 py-2.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold rounded-xl text-sm transition-colors cursor-pointer disabled:opacity-50"
+                  className="w-2/3 py-3 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold rounded-xl text-sm transition-colors cursor-pointer disabled:opacity-50 h-auto"
                 >
                   {loading ? 'Creating Room...' : 'Continue to Lobby →'}
-                </button>
+                </Button>
               </div>
             </form>
           </motion.div>

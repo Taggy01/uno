@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { Surface, Typography, Card, Avatar, Button } from "@heroui/react";
+import { Surface, Typography, Avatar, Button, Alert, Chip } from "@heroui/react";
 import { getUserGradient } from "../Gradient/gradient";
 import { ArrowRightFromSquare, Copy, Check, Play, Plus, TrashBin, Comment, PaperPlane, Persons } from "@gravity-ui/icons";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useSocket } from "../context/SocketContext";
+import { motion } from "framer-motion";
 
 export default function Lobby() {
   const { roomCode } = useParams();
@@ -49,7 +50,6 @@ export default function Lobby() {
   useEffect(() => {
     if (!socket || !cleanCode || !user) return;
 
-    // Join room emit
     const emitJoin = () => {
       socket.emit("join_room", {
         roomCode: cleanCode,
@@ -150,40 +150,42 @@ export default function Lobby() {
     <div className="min-h-screen bg-neutral-950 flex flex-col items-center justify-center p-4 selection:bg-blue-600 selection:text-white">
       <div className="w-full max-w-4xl grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         {/* Main Lobby Panel */}
-        <Surface className="lg:col-span-2 flex flex-col gap-4 rounded-3xl p-6 border border-neutral-800 bg-neutral-900 shadow-2xl" variant="default">
+        <Surface className="lg:col-span-2 flex flex-col gap-4 rounded-3xl p-6 border border-neutral-800 bg-neutral-900 shadow-2xl text-left" variant="default">
           {/* Header */}
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-neutral-800 pb-4">
             <div>
               <div className="flex items-center gap-2">
-                <Typography.Heading level={3} className="font-extrabold text-white">
+                <Typography.Heading level={3} className="font-extrabold text-white text-xl">
                   {room?.name || `Room #${cleanCode}`}
                 </Typography.Heading>
                 {room?.isPrivate && (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-neutral-800 text-neutral-400 font-semibold border border-neutral-700">
+                  <Chip size="sm" className="text-[10px] bg-neutral-800 text-neutral-400 font-semibold border border-neutral-700">
                     Private
-                  </span>
+                  </Chip>
                 )}
               </div>
-              <p className="text-xs text-neutral-400 mt-0.5">
+              <Typography className="text-xs text-neutral-400 mt-0.5">
                 Share room code with friends to join the match.
-              </p>
+              </Typography>
             </div>
 
-            {/* Room Code Pill */}
-            <button
+            {/* Room Code Button */}
+            <Button
+              type="button"
+              variant="secondary"
               onClick={handleCopyCode}
-              className="flex items-center gap-2 px-4 py-2 bg-neutral-800 hover:bg-neutral-750 border border-neutral-700 rounded-2xl text-blue-400 font-mono font-bold text-base transition-colors active:scale-95 cursor-pointer shadow-sm"
+              className="flex items-center gap-2 px-4 py-2.5 bg-neutral-800 hover:bg-neutral-750 border border-neutral-700 rounded-2xl text-blue-400 font-mono font-bold text-base transition-colors cursor-pointer shadow-sm h-auto"
               title="Click to copy room code"
             >
               <span>Code: #{cleanCode}</span>
               {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-            </button>
+            </Button>
           </div>
 
           {error && (
-            <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-2xl text-rose-400 text-xs font-medium">
+            <Alert status="danger" className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-2xl text-rose-300 text-xs font-medium">
               {error}
-            </div>
+            </Alert>
           )}
 
           {/* Player Roster */}
@@ -194,13 +196,16 @@ export default function Lobby() {
                 Players ({playerCount}/{room?.maxPlayers || 4})
               </span>
               {isHost && playerCount < (room?.maxPlayers || 4) && (
-                <button
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
                   onClick={handleAddBot}
-                  className="flex items-center gap-1.5 px-3 py-1 bg-neutral-800 hover:bg-neutral-700 active:bg-neutral-750 text-neutral-200 border border-neutral-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-750 active:bg-neutral-700 text-neutral-200 border border-neutral-700 rounded-xl text-xs font-bold transition-colors cursor-pointer h-auto"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Add AI Bot</span>
-                </button>
+                </Button>
               )}
             </div>
 
@@ -237,9 +242,9 @@ export default function Lobby() {
                             {p.username}
                           </span>
                           {isMe && (
-                            <span className="text-[10px] bg-blue-500/20 text-blue-300 px-1.5 py-0.2 rounded font-semibold">
+                            <Chip size="sm" className="text-[10px] bg-blue-500/20 text-blue-300 font-semibold border-none">
                               YOU
-                            </span>
+                            </Chip>
                           )}
                         </div>
                         <div className="flex items-center gap-1 mt-0.5">
@@ -261,13 +266,16 @@ export default function Lobby() {
                     </div>
 
                     {isHost && !isMe && (
-                      <button
+                      <Button
+                        type="button"
+                        variant="tertiary"
+                        size="sm"
                         onClick={() => handleRemovePlayer(p.id)}
                         className="p-1.5 text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
                         title="Remove player"
                       >
                         <TrashBin className="w-4 h-4" />
-                      </button>
+                      </Button>
                     )}
                   </div>
                 );
@@ -279,12 +287,15 @@ export default function Lobby() {
               <div className="p-3 bg-neutral-800 border border-neutral-700 rounded-2xl text-xs text-neutral-300 flex items-center justify-between gap-2">
                 <span>Waiting for another player or bot to start...</span>
                 {isHost && (
-                  <button
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="sm"
                     onClick={handleAddBot}
-                    className="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg text-xs transition-colors cursor-pointer shrink-0"
+                    className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg text-xs transition-colors cursor-pointer shrink-0 h-auto"
                   >
                     + Add Bot Now
-                  </button>
+                  </Button>
                 )}
               </div>
             )}
@@ -292,27 +303,31 @@ export default function Lobby() {
 
           {/* Action Buttons */}
           <div className="flex flex-wrap gap-4 pt-4 border-t border-neutral-800 mt-2">
-            <button
+            <Button
+              type="button"
+              variant="secondary"
               onClick={handleLeave}
-              className="flex-1 py-3 bg-neutral-800 hover:bg-neutral-700 active:bg-neutral-750 text-neutral-300 font-bold rounded-2xl border border-neutral-700 transition-colors flex items-center justify-center gap-2 text-sm cursor-pointer"
+              className="flex-1 py-3 bg-neutral-800 hover:bg-neutral-700 active:bg-neutral-750 text-neutral-300 font-bold rounded-2xl border border-neutral-700 transition-colors flex items-center justify-center gap-2 text-sm cursor-pointer h-auto"
             >
               <ArrowRightFromSquare className="w-4 h-4 rotate-180" />
               <span>Leave Lobby</span>
-            </button>
+            </Button>
 
             {isHost ? (
-              <button
+              <Button
+                type="button"
+                variant={canStart ? "primary" : "secondary"}
                 onClick={handleStartGame}
                 disabled={!canStart}
-                className={`flex-1 py-3 font-bold rounded-2xl transition-colors flex items-center justify-center gap-2 text-sm cursor-pointer shadow-md ${
+                className={`flex-1 py-3 font-bold rounded-2xl transition-colors flex items-center justify-center gap-2 text-sm cursor-pointer shadow-md h-auto ${
                   canStart
                     ? "bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white"
-                    : "bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed"
+                    : "bg-neutral-800 text-neutral-500 border border-neutral-700 cursor-not-allowed opacity-60"
                 }`}
               >
                 <Play className="w-4 h-4" />
                 <span>{canStart ? "Start Match" : "Need 2+ Players to Start"}</span>
-              </button>
+              </Button>
             ) : (
               <div className="flex-1 flex items-center justify-center p-3 rounded-2xl bg-neutral-800 border border-neutral-700 text-neutral-400 text-sm font-medium">
                 <span className="animate-pulse mr-2">⏳</span> Waiting for host to start...
@@ -322,13 +337,13 @@ export default function Lobby() {
         </Surface>
 
         {/* Lobby Chat Sidebar */}
-        <Surface className="flex flex-col h-[480px] rounded-3xl p-4 border border-neutral-800 bg-neutral-900 shadow-2xl" variant="default">
+        <Surface className="flex flex-col h-[480px] rounded-3xl p-4 border border-neutral-800 bg-neutral-900 shadow-2xl text-left" variant="default">
           <div className="flex items-center gap-2 pb-3 border-b border-neutral-800 text-neutral-300 font-bold text-sm">
             <Comment className="w-4 h-4 text-blue-400" />
             <span>Lobby Chat</span>
           </div>
 
-          <div className="flex-1 overflow-y-auto space-y-2 py-3 text-xs pr-1">
+          <div className="flex-1 overflow-y-auto space-y-2 py-3 text-xs pr-1 scrollbar-thin">
             {chatMessages.length === 0 ? (
               <div className="text-center text-neutral-500 py-16">
                 Say hello to your match opponents! 👋
@@ -346,12 +361,14 @@ export default function Lobby() {
             )}
           </div>
 
-          {/* Quick Emotes & Input */}
+          {/* Quick Emotes & Input with Animated Emojis */}
           <div className="pt-2 border-t border-neutral-800 space-y-2">
-            <div className="flex gap-1.5 justify-center">
+            <div className="flex gap-2 justify-center">
               {['👋', '🔥', '🃏', '😎', '💥', '✨'].map((emoji) => (
-                <button
+                <motion.button
                   key={emoji}
+                  whileHover={{ scale: 1.35, rotate: [-5, 5, 0] }}
+                  whileTap={{ scale: 0.8 }}
                   onClick={() => {
                     if (socket && user) {
                       socket.emit('send_chat', {
@@ -361,10 +378,10 @@ export default function Lobby() {
                       });
                     }
                   }}
-                  className="p-1 text-sm rounded-lg hover:bg-neutral-800 cursor-pointer transition-transform active:scale-90"
+                  className="p-1 text-base rounded-xl hover:bg-neutral-800 cursor-pointer transition-colors"
                 >
                   {emoji}
-                </button>
+                </motion.button>
               ))}
             </div>
 
@@ -376,12 +393,14 @@ export default function Lobby() {
                 placeholder="Type a message..."
                 className="flex-1 px-3 py-2 bg-neutral-800 border border-neutral-700 rounded-xl text-white text-xs focus:outline-none focus:border-blue-500"
               />
-              <button
+              <Button
                 type="submit"
-                className="p-2 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white rounded-xl font-bold transition-colors cursor-pointer"
+                variant="primary"
+                size="sm"
+                className="p-2 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white rounded-xl font-bold transition-colors cursor-pointer h-auto"
               >
                 <PaperPlane className="w-3.5 h-3.5" />
-              </button>
+              </Button>
             </form>
           </div>
         </Surface>

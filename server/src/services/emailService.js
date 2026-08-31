@@ -5,56 +5,78 @@ let transporter = null;
 async function getTransporter() {
   if (transporter) return transporter;
 
-  // 1. If explicit SMTP env credentials are provided
-  if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-    const isGmail = (process.env.EMAIL_HOST || '').includes('gmail') || (process.env.EMAIL_USER || '').includes('gmail');
-    
-    transporter = nodemailer.createTransport({
-      service: isGmail ? 'gmail' : undefined,
-      host: isGmail ? undefined : (process.env.EMAIL_HOST || 'smtp.gmail.com'),
-      port: Number(process.env.EMAIL_PORT) || (isGmail ? 465 : 587),
-      secure: Number(process.env.EMAIL_PORT) === 465,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-      connectionTimeout: 5000,
-      greetingTimeout: 5000,
-      socketTimeout: 5000,
-    });
-    return transporter;
+  const emailUser = process.env.EMAIL_USER;
+  const emailPass = process.env.EMAIL_PASS;
+  const emailHost = process.env.EMAIL_HOST || 'smtp.gmail.com';
+  const emailPort = Number(process.env.EMAIL_PORT) || 465;
+
+  if (!emailUser || !emailPass) {
+    throw new Error(
+      'EMAIL_USER and EMAIL_PASS are not configured on the server.'
+    );
   }
 
-  // 2. Otherwise create test inbox for development
+  const isGmail = emailHost.includes('gmail.com');
+
+  console.log('[EMAIL SERVICE] Initializing SMTP transporter...');
+  console.log(`[EMAIL SERVICE] Host: ${emailHost}`);
+  console.log(`[EMAIL SERVICE] Port: ${emailPort}`);
+  console.log(`[EMAIL SERVICE] User: ${emailUser}`);
+
+  transporter = nodemailer.createTransport({
+    ...(isGmail
+      ? {
+        service: 'gmail',
+      }
+      : {
+        host: emailHost,
+        port: emailPort,
+        secure: emailPort === 465,
+      }),
+
+    auth: {
+      user: emailUser,
+      pass: emailPass,
+    },
+
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 10000,
+  });
+
   try {
-    const testAccount = await nodemailer.createTestAccount();
-    transporter = nodemailer.createTransport({
-      host: 'smtp.ethereal.email',
-      port: 587,
-      secure: false,
-      auth: {
-        user: testAccount.user,
-        pass: testAccount.pass,
-      },
-      connectionTimeout: 5000,
-    });
-    console.log(`[EMAIL SERVICE] Initialized dev test email client: ${testAccount.user}`);
+    await transporter.verify();
+
+    console.log('[EMAIL SERVICE] SMTP connection verified successfully.');
+
     return transporter;
-  } catch (err) {
-    console.warn('[EMAIL SERVICE] Could not create test SMTP account:', err.message);
-    return null;
+  } catch (error) {
+    console.error('[EMAIL SERVICE] SMTP verification failed:');
+    console.error(error);
+
+    transporter = null;
+
+    throw new Error(
+      `SMTP connection failed: ${error.message}`
+    );
   }
 }
 
 export async function sendOtpEmail(toEmail, otp, username) {
-  // Always log OTP to server console for guaranteed visibility
-  console.log(`\n========================================\n[UNO OTP CODE] Verification code for ${toEmail}: ${otp}\n========================================\n`);
+  // Keep this temporarily for debugging.
+  console.log(
+    `\n========================================
+[UNO OTP CODE]
+Verification code for ${toEmail}: ${otp}
+========================================\n`
+  );
 
   try {
     const mailClient = await getTransporter();
-    if (!mailClient) {
-      return { success: true, simulated: true };
-    }
+
+    const fromEmail =
+      process.env.EMAIL_FROM ||
+      `"UNO Online" <${process.env.EMAIL_USER}>`;
 
     const htmlContent = `
       <!DOCTYPE html>
@@ -62,30 +84,103 @@ export async function sendOtpEmail(toEmail, otp, username) {
       <head>
         <meta charset="utf-8">
         <style>
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0a0a0a; color: #ffffff; padding: 24px; }
-          .container { max-width: 480px; margin: 0 auto; background: #171717; border-radius: 20px; border: 1px solid #262626; padding: 32px; text-align: center; }
-          .badge { display: inline-block; background-color: #dc2626; color: #ffffff; font-weight: 900; font-size: 16px; padding: 6px 14px; border-radius: 12px; margin-bottom: 16px; }
-          h1 { font-size: 22px; margin: 0 0 8px 0; color: #ffffff; }
-          p { color: #a3a3a3; font-size: 14px; line-height: 1.5; margin: 0 0 24px 0; }
-          .otp-card { background: #0a0a0a; border: 1px dashed #3b82f6; border-radius: 16px; padding: 18px; margin: 20px 0; }
-          .otp-code { font-family: monospace; font-size: 36px; letter-spacing: 8px; font-weight: bold; color: #60a5fa; margin: 0; }
-          .expiry { font-size: 12px; color: #737373; margin-top: 8px; }
-          .footer { font-size: 11px; color: #525252; margin-top: 24px; border-top: 1px solid #262626; padding-top: 16px; }
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI',
+              Roboto, Helvetica, Arial, sans-serif;
+            background-color: #0a0a0a;
+            color: #ffffff;
+            padding: 24px;
+          }
+
+          .container {
+            max-width: 480px;
+            margin: 0 auto;
+            background: #171717;
+            border-radius: 20px;
+            border: 1px solid #262626;
+            padding: 32px;
+            text-align: center;
+          }
+
+          .badge {
+            display: inline-block;
+            background-color: #dc2626;
+            color: #ffffff;
+            font-weight: 900;
+            font-size: 16px;
+            padding: 6px 14px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+          }
+
+          h1 {
+            font-size: 22px;
+            margin: 0 0 8px 0;
+            color: #ffffff;
+          }
+
+          p {
+            color: #a3a3a3;
+            font-size: 14px;
+            line-height: 1.5;
+            margin: 0 0 24px 0;
+          }
+
+          .otp-card {
+            background: #0a0a0a;
+            border: 1px dashed #3b82f6;
+            border-radius: 16px;
+            padding: 18px;
+            margin: 20px 0;
+          }
+
+          .otp-code {
+            font-family: monospace;
+            font-size: 36px;
+            letter-spacing: 8px;
+            font-weight: bold;
+            color: #60a5fa;
+            margin: 0;
+          }
+
+          .expiry {
+            font-size: 12px;
+            color: #737373;
+            margin-top: 8px;
+          }
+
+          .footer {
+            font-size: 11px;
+            color: #525252;
+            margin-top: 24px;
+            border-top: 1px solid #262626;
+            padding-top: 16px;
+          }
         </style>
       </head>
+
       <body>
         <div class="container">
           <div class="badge">UNO ONLINE</div>
+
           <h1>Verify Your Email</h1>
-          <p>Hi <strong>${username || 'Player'}</strong>, use the verification code below to complete your UNO account registration:</p>
-          
+
+          <p>
+            Hi <strong>${username || 'Player'}</strong>,
+            use the verification code below to complete your
+            UNO account registration:
+          </p>
+
           <div class="otp-card">
             <div class="otp-code">${otp}</div>
             <div class="expiry">Valid for 10 minutes</div>
           </div>
-          
-          <p style="font-size: 12px; margin-bottom: 0;">If you did not request this verification, you can safely ignore this email.</p>
-          
+
+          <p style="font-size: 12px; margin-bottom: 0;">
+            If you did not request this verification,
+            you can safely ignore this email.
+          </p>
+
           <div class="footer">
             UNO Online Arena • Secure Account Verification
           </div>
@@ -95,27 +190,51 @@ export async function sendOtpEmail(toEmail, otp, username) {
     `;
 
     const info = await mailClient.sendMail({
-      from: process.env.EMAIL_FROM || `"UNO Online" <${process.env.EMAIL_USER || 'no-reply@unogame.online'}>`,
+      from: fromEmail,
       to: toEmail,
       subject: `Your UNO Verification Code: ${otp}`,
-      text: `Your UNO verification code is: ${otp}. This code is valid for 10 minutes.`,
+      text: `
+Your UNO verification code is: ${otp}
+
+This code is valid for 10 minutes.
+
+If you did not request this verification, you can safely ignore this email.
+      `.trim(),
       html: htmlContent,
     });
 
-    console.log(`[EMAIL DISPATCHED] Successfully sent OTP to ${toEmail}`);
-    const previewUrl = nodemailer.getTestMessageUrl(info);
-    if (previewUrl) {
-      console.log(`[EMAIL PREVIEW LINK]: ${previewUrl}`);
+    console.log(
+      `[EMAIL DISPATCHED] OTP sent successfully to ${toEmail}`
+    );
+
+    console.log(`[EMAIL MESSAGE ID] ${info.messageId}`);
+
+    return {
+      success: true,
+      messageId: info.messageId,
+    };
+
+  } catch (error) {
+    console.error('\n========================================');
+    console.error('[EMAIL ERROR] Failed to send OTP');
+    console.error('Message:', error.message);
+    console.error('Code:', error.code);
+    console.error('Command:', error.command);
+    console.error('Response:', error.response);
+    console.error('========================================\n');
+
+    if (
+      error.message?.toLowerCase().includes('username and password')
+    ) {
+      console.error(
+        '[GMAIL ERROR] Gmail rejected the credentials.'
+      );
+
+      console.error(
+        '[GMAIL TIP] EMAIL_PASS must be a Google App Password, NOT your normal Gmail password.'
+      );
     }
 
-    return { success: true, previewUrl };
-  } catch (error) {
-    console.error(`\n[EMAIL NOTICE] SMTP Delivery Notice: ${error.message}`);
-    if (error.message && error.message.includes('Username and Password not accepted')) {
-      console.warn(`[GMAIL TIP] For Gmail (get.uno.mail@gmail.com), you must generate a 16-character "App Password" at: https://myaccount.google.com/apppasswords`);
-    }
-    // Return gracefully so OTP verification step continues
-    return { success: true, simulated: true };
+    throw error;
   }
 }
-
