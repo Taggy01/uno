@@ -252,6 +252,59 @@ export function setupSocketHandlers(io) {
       io.to(roomCode).emit('room_updated', room.getSummary());
     });
 
+    // Create Instant Singleplayer Game vs Bots
+    socket.on('create_singleplayer_game', ({ user, botCount = 2 }) => {
+      try {
+        if (!user) {
+          socket.emit('error_msg', 'User information required to start singleplayer match.');
+          return;
+        }
+
+        const count = Math.max(1, Math.min(3, parseInt(botCount, 10) || 2));
+        const room = roomManager.createRoom({
+          name: `${user.username}'s Solo Match`,
+          maxPlayers: count + 1,
+          hostId: user.id,
+          hostUsername: user.username,
+          isPrivate: true,
+        });
+
+        const { player } = roomManager.joinRoom(room.code, {
+          id: user.id,
+          username: user.username,
+          socketId: socket.id,
+        });
+
+        socket.join(room.code);
+
+        // Add requested bots
+        for (let i = 0; i < count; i++) {
+          room.addBot();
+        }
+
+        room.status = 'playing';
+        const game = gameEngine.createGame(room.code, room.players);
+
+        socket.emit('singleplayer_game_started', {
+          roomCode: room.code,
+          room: room.getSummary(),
+          player,
+        });
+
+        io.to(room.code).emit('game_started', {
+          roomCode: room.code,
+          topCard: game.topCard,
+          activeColor: game.activeColor,
+          currentTurnPlayerId: game.getCurrentPlayer()?.id,
+        });
+
+        // Send private player state
+        socket.emit('player_state', game.getState(user.id));
+      } catch (err) {
+        socket.emit('error_msg', err.message || 'Failed to start singleplayer game.');
+      }
+    });
+
     // Chat / Emote
     socket.on('send_chat', ({ roomCode, message, user }) => {
       if (!message || !roomCode) return;
@@ -261,6 +314,17 @@ export function setupSocketHandlers(io) {
         senderId: user?.id,
         text: message.substring(0, 150),
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      });
+    });
+
+    // Quick Live Reaction Emote
+    socket.on('send_reaction', ({ roomCode, emoji, user }) => {
+      if (!emoji || !roomCode) return;
+      io.to(roomCode).emit('player_reaction', {
+        id: Math.random().toString(36).substring(2, 9),
+        sender: user?.username || 'Player',
+        senderId: user?.id,
+        emoji,
       });
     });
 

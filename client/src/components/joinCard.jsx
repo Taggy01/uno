@@ -37,16 +37,20 @@ export default function JoinCard() {
   };
 
   return (
-    <div className="flex">
-      <Card className="w-80 h-full flex flex-col justify-between border border-neutral-800 bg-neutral-900 rounded-3xl p-2 hover:border-neutral-700 transition-all shadow-xl">
-        <Card.Header>
-          <div className="w-10 h-10 rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center mb-3">
-            <Magnifier className="w-6 h-6" />
+    <div className="w-full max-w-lg">
+      <Card className="w-full border border-neutral-800 bg-neutral-900 rounded-3xl p-4 sm:p-6 hover:border-neutral-700 transition-all shadow-xl">
+        <Card.Header className="pb-2">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center border border-blue-500/20">
+              <Magnifier className="w-5 h-5" />
+            </div>
+            <div>
+              <Card.Title className="text-xl font-bold text-white">Join with Room Code</Card.Title>
+              <Card.Description className="text-neutral-400 text-xs sm:text-sm">
+                Enter the room code shared by your friend to jump straight in.
+              </Card.Description>
+            </div>
           </div>
-          <Card.Title className="text-xl font-bold text-white">Join with Code</Card.Title>
-          <Card.Description className="text-neutral-400 text-sm">
-            Enter the 5-digit room code shared by your friend.
-          </Card.Description>
         </Card.Header>
 
         <Card.Content className="pt-4">
@@ -57,32 +61,36 @@ export default function JoinCard() {
               </div>
             )}
 
-            <div className="relative">
-              <input
-                type="text"
-                maxLength={10}
-                value={code}
-                onChange={(e) => {
-                  setCode(e.target.value.toUpperCase());
-                  if (error) setError('');
-                }}
-                placeholder="e.g. 54321"
-                className="w-full px-4 py-3 bg-neutral-800 border border-neutral-700 rounded-2xl text-white font-mono text-center tracking-widest text-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all uppercase placeholder:normal-case placeholder:tracking-normal placeholder:text-neutral-500"
-              />
-            </div>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  maxLength={10}
+                  value={code}
+                  onChange={(e) => {
+                    setCode(e.target.value.toUpperCase());
+                    if (error) setError('');
+                  }}
+                  placeholder="e.g. 54321"
+                  className="w-full px-4 py-3 bg-neutral-800 border border-neutral-700 rounded-2xl text-white font-mono text-center sm:text-left tracking-widest text-base focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all uppercase placeholder:normal-case placeholder:tracking-normal placeholder:text-neutral-500"
+                />
+              </div>
 
-            <button
-              type="submit"
-              disabled={!code.trim() || loading}
-              className="w-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold py-3 px-4 rounded-2xl transition-colors shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-            >
-              {loading ? 'Finding Room...' : (
-                <>
-                  <span>Join Match</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
+              <button
+                type="submit"
+                disabled={!code.trim() || loading}
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold rounded-2xl transition-colors shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 whitespace-nowrap text-sm"
+              >
+                {loading ? (
+                  <span>Finding...</span>
+                ) : (
+                  <>
+                    <span>Join Match</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </div>
           </form>
         </Card.Content>
       </Card>

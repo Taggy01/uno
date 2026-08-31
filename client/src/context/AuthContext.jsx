@@ -16,30 +16,7 @@ export function AuthProvider({ children }) {
   });
 
   const [token, setToken] = useState(() => localStorage.getItem('uno_token') || '');
-
-  // Auto initialize guest session if no user or token exists
-  useEffect(() => {
-    const initAuth = async () => {
-      if (!user || !token) {
-        try {
-          const defaultName = user?.username || 'Player_' + Math.floor(1000 + Math.random() * 9000);
-          const res = await fetch('/api/auth/guest', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nickname: defaultName }),
-          });
-          const data = await res.json();
-          if (data.success) {
-            setUser(data.user);
-            setToken(data.token);
-          }
-        } catch (e) {
-          console.error('Failed to init guest token:', e);
-        }
-      }
-    };
-    initAuth();
-  }, []);
+  const [authLoading, setAuthLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -73,55 +50,129 @@ export function AuthProvider({ children }) {
   };
 
   const signup = async (username, email, password) => {
-    const res = await fetch('/api/auth/signup', {
+    return sendOtp(username, email, password);
+  };
+
+  const sendOtp = async (username, email, password) => {
+    const res = await fetch('/api/auth/send-otp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, email, password }),
     });
     const data = await res.json();
     if (!res.ok || !data.success) {
-      throw new Error(data.message || 'Signup failed');
+      throw new Error(data.message || 'Failed to send OTP');
+    }
+    return data;
+  };
+
+
+  const verifyOtpAndSignup = async (email, otp) => {
+    const res = await fetch('/api/auth/verify-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, otp }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.message || 'OTP verification failed');
     }
     setUser(data.user);
     setToken(data.token);
     return data.user;
   };
 
+  const changePassword = async (currentPassword, newPassword) => {
+    const res = await fetch('/api/auth/change-password', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+    const data = await res.json();
+    if (!res.ok || !data.success) {
+      throw new Error(data.message || 'Failed to change password');
+    }
+    return data;
+  };
+
+  const refreshProfile = async () => {
+    if (!token) return;
+    try {
+      const res = await fetch('/api/auth/me', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success && data.user) {
+        setUser(data.user);
+      }
+    } catch (e) {
+      // Ignore
+    }
+  };
+
   const guestLogin = async (nickname) => {
+    const cleanNick = (nickname || '').trim() || `Player_${Math.floor(1000 + Math.random() * 9000)}`;
     try {
       const res = await fetch('/api/auth/guest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nickname }),
+        body: JSON.stringify({ nickname: cleanNick }),
       });
       const data = await res.json();
-      if (data.success) {
+      if (data.success && data.user) {
         setUser(data.user);
-        setToken(data.token);
+        setToken(data.token || 'guest_token');
         return data.user;
       }
     } catch (err) {
-      const guest = {
-        id: 'guest_' + Math.random().toString(36).substring(2, 9),
-        username: nickname || 'Player_' + Math.floor(1000 + Math.random() * 9000),
-        isGuest: true,
-      };
-      setUser(guest);
-      return guest;
+      // Fallback
     }
+
+    const guest = {
+      id: 'guest_' + Math.random().toString(36).substring(2, 9),
+      username: cleanNick,
+      isGuest: true,
+      stats: { gamesPlayed: 0, wins: 0, score: 0 },
+    };
+    setUser(guest);
+    setToken('guest_token_' + Date.now());
+    return guest;
   };
 
   const updateUsername = (name) => {
     if (!name.trim()) return;
-    setUser((prev) => ({ ...prev, username: name.trim() }));
+    setUser((prev) => (prev ? { ...prev, username: name.trim() } : prev));
   };
 
   const logout = () => {
-    guestLogin();
+    setUser(null);
+    setToken('');
+    localStorage.removeItem('uno_user');
+    localStorage.removeItem('uno_token');
   };
 
+
   return (
-    <AuthContext.Provider value={{ user, token, login, signup, guestLogin, updateUsername, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        isAuthenticated: Boolean(user),
+        authLoading,
+        login,
+        signup,
+        sendOtp,
+        verifyOtpAndSignup,
+        changePassword,
+        refreshProfile,
+        guestLogin,
+        updateUsername,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -130,3 +181,4 @@ export function AuthProvider({ children }) {
 export function useAuth() {
   return useContext(AuthContext);
 }
+

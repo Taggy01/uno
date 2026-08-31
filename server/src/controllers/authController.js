@@ -1,7 +1,11 @@
 import { User } from '../models/User.js';
 import { generateToken } from '../middlewares/authMiddleware.js';
+import { sendOtpEmail } from '../services/emailService.js';
 
-export async function signup(req, res) {
+// In-memory OTP cache for signups (email -> { otp, expiresAt, username, email, password })
+const pendingOtps = new Map();
+
+export async function sendOtp(req, res) {
   try {
     const { username, email, password } = req.body;
 
@@ -30,11 +34,63 @@ export async function signup(req, res) {
       return res.status(400).json({ success: false, message: 'Username is already taken. Please choose another.' });
     }
 
-    const user = await User.create({
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+    pendingOtps.set(cleanEmail, {
+      otp,
+      expiresAt,
       username: trimmedUsername,
       email: cleanEmail,
       password,
     });
+
+    // Send Real Email OTP
+    await sendOtpEmail(cleanEmail, otp, trimmedUsername);
+
+    return res.status(200).json({
+      success: true,
+      message: `Verification code sent to ${cleanEmail}. Please check your inbox.`,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message || 'Failed to send OTP' });
+  }
+}
+
+
+export async function verifyOtpAndSignup(req, res) {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({ success: false, message: 'Email and OTP are required' });
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+    const record = pendingOtps.get(cleanEmail);
+
+    if (!record) {
+      return res.status(400).json({ success: false, message: 'No pending verification found. Please request a new OTP.' });
+    }
+
+    if (Date.now() > record.expiresAt) {
+      pendingOtps.delete(cleanEmail);
+      return res.status(400).json({ success: false, message: 'OTP has expired. Please request a new OTP.' });
+    }
+
+    if (record.otp !== otp.toString().trim()) {
+      return res.status(400).json({ success: false, message: 'Invalid OTP code. Please check and try again.' });
+    }
+
+    // Create User Account
+    const user = await User.create({
+      username: record.username,
+      email: record.email,
+      password: record.password,
+    });
+
+    pendingOtps.delete(cleanEmail);
 
     const token = generateToken(user);
     const safeUser = user.toJSON ? user.toJSON() : {
@@ -43,24 +99,23 @@ export async function signup(req, res) {
       email: user.email,
       isGuest: user.isGuest,
       stats: user.stats,
+      createdAt: user.createdAt,
     };
 
     return res.status(201).json({
       success: true,
-      message: 'Account created successfully',
+      message: 'Account verified and created successfully!',
       user: safeUser,
       token,
     });
   } catch (error) {
-    if (error.code === 11000 || error.name === 'MongoServerError') {
-      const isUsername = error.keyPattern?.username || (error.message && error.message.includes('username'));
-      if (isUsername) {
-        return res.status(400).json({ success: false, message: 'Username is already taken. Please choose another.' });
-      }
-      return res.status(400).json({ success: false, message: 'An account with this email already exists' });
-    }
-    return res.status(400).json({ success: false, message: error.message || 'Signup failed' });
+    return res.status(500).json({ success: false, message: error.message || 'Verification failed' });
   }
+}
+
+export async function signup(req, res) {
+  // Legacy / Direct signup fallback
+  return sendOtp(req, res);
 }
 
 export async function login(req, res) {
@@ -98,6 +153,7 @@ export async function login(req, res) {
       email: user.email,
       isGuest: user.isGuest,
       stats: user.stats,
+      createdAt: user.createdAt,
     };
 
     return res.status(200).json({
@@ -141,3 +197,49 @@ export async function getProfile(req, res) {
     return res.status(500).json({ success: false, message: error.message });
   }
 }
+
+export async function changePassword(req, res) {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Current password and new password are required' });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({ success: false, message: 'New password must be at least 8 characters' });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    if (user.isGuest) {
+      return res.status(400).json({ success: false, message: 'Guest accounts do not have passwords. Please register an account.' });
+    }
+
+    const isMatch = await user.comparePassword(currentPassword);
+    if (!isMatch) {
+      return res.status(400).json({ success: false, message: 'Current password is incorrect' });
+    }
+
+    user.password = newPassword;
+    if (user.save) {
+      await user.save();
+    } else {
+      // In-memory update
+      const bcrypt = (await import('bcryptjs')).default;
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(newPassword, salt);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: 'Password changed successfully',
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message || 'Failed to change password' });
+  }
+}
+

@@ -1,36 +1,17 @@
-import { useState } from 'react';
-import { Button, Card } from "@heroui/react";
-import { Plus, Xmark } from '@gravity-ui/icons';
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Xmark, Plus } from '@gravity-ui/icons';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
-export default function CreateCard({ externalOpen, onExternalClose }) {
+export default function CreateRoomModal({ isOpen, onClose }) {
   const { user, token } = useAuth();
   const navigate = useNavigate();
-  const [internalOpen, setInternalOpen] = useState(false);
   const [roomName, setRoomName] = useState('');
   const [roomSize, setRoomSize] = useState(4);
   const [isPrivate, setIsPrivate] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-  const isOpen = externalOpen !== undefined ? externalOpen : internalOpen;
-
-  const handleOpenModal = () => {
-    setRoomName(`${user?.username || 'Player'}'s Room`);
-    setError('');
-    if (externalOpen === undefined) {
-      setInternalOpen(true);
-    }
-  };
-
-  const handleClose = () => {
-    if (onExternalClose) {
-      onExternalClose();
-    } else {
-      setInternalOpen(false);
-    }
-  };
 
   const handleCreate = async (e) => {
     if (e) e.preventDefault();
@@ -61,7 +42,7 @@ export default function CreateCard({ externalOpen, onExternalClose }) {
         throw new Error(data.message || 'Failed to create room');
       }
 
-      handleClose();
+      onClose();
       navigate(`/lobby/${data.room.code}`);
     } catch (err) {
       setError(err.message || 'Failed to create room');
@@ -71,44 +52,33 @@ export default function CreateCard({ externalOpen, onExternalClose }) {
   };
 
   return (
-    <div className="flex">
-      <Card className="w-80 h-full flex flex-col justify-between border border-neutral-800 bg-neutral-900 rounded-3xl p-2 hover:border-neutral-700 transition-all shadow-xl">
-        <Card.Header>
-          <div className="w-10 h-10 rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center mb-3">
-            <Plus className="w-6 h-6" />
-          </div>
-          <Card.Title className="text-xl font-bold text-white">Create Room</Card.Title>
-          <Card.Description className="text-neutral-400 text-sm">
-            Create a custom room, configure player size, and invite your friends.
-          </Card.Description>
-        </Card.Header>
-
-        <Card.Content className="pt-4">
-          <button
-            className="w-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold py-3 px-4 rounded-2xl transition-colors shadow-md cursor-pointer"
-            onClick={handleOpenModal}
-          >
-            Create Room
-          </button>
-        </Card.Content>
-      </Card>
-
-      {/* Modal Dialog */}
+    <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in">
-          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl p-6 max-w-md w-full shadow-2xl relative text-left">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0, translateY: 15 }}
+            animate={{ scale: 1, opacity: 1, translateY: 0 }}
+            exit={{ scale: 0.95, opacity: 0, translateY: 15 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+            className="bg-neutral-900 border border-neutral-800 rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl relative text-left"
+          >
             {/* Close Button */}
             <button
-              onClick={handleClose}
+              onClick={onClose}
               className="absolute top-5 right-5 p-1.5 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-xl transition-colors cursor-pointer"
             >
               <Xmark className="w-5 h-5" />
             </button>
 
-            <h3 className="text-2xl font-bold text-white mb-1">Create Match Room</h3>
-            <p className="text-xs text-neutral-400 mb-5">
-              Set up your room settings and jump into the lobby.
-            </p>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-400 flex items-center justify-center text-2xl border border-blue-500/20">
+                <Plus className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-white">Create Match Room</h3>
+                <p className="text-xs text-neutral-400">Configure room settings & invite players</p>
+              </div>
+            </div>
 
             {error && (
               <div className="p-3 mb-4 bg-rose-500/10 border border-rose-500/30 rounded-2xl text-rose-400 text-xs font-medium">
@@ -126,7 +96,7 @@ export default function CreateCard({ externalOpen, onExternalClose }) {
                   required
                   value={roomName}
                   onChange={(e) => setRoomName(e.target.value)}
-                  placeholder="e.g. Match Room"
+                  placeholder={`${user?.username || 'Player'}'s Room`}
                   className="w-full px-4 py-2.5 bg-neutral-800 border border-neutral-700 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
                 />
               </div>
@@ -170,7 +140,7 @@ export default function CreateCard({ externalOpen, onExternalClose }) {
               <div className="flex gap-3 pt-3">
                 <button
                   type="button"
-                  onClick={handleClose}
+                  onClick={onClose}
                   className="w-1/3 py-2.5 bg-neutral-800 hover:bg-neutral-700 active:bg-neutral-750 text-neutral-300 font-bold rounded-xl border border-neutral-700 transition-colors text-sm cursor-pointer"
                 >
                   Cancel
@@ -184,9 +154,9 @@ export default function CreateCard({ externalOpen, onExternalClose }) {
                 </button>
               </div>
             </form>
-          </div>
+          </motion.div>
         </div>
       )}
-    </div>
+    </AnimatePresence>
   );
 }
