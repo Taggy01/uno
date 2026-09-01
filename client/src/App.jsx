@@ -9,11 +9,13 @@ import PublicOnlyRoute from './components/PublicOnlyRoute';
 import { Route, Routes, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
+import { ThemeProvider } from './context/ThemeContext';
 
 function App() {
   return (
-    <AuthProvider>
-      <SocketProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <SocketProvider>
         <Routes>
           <Route
             path="/"
@@ -60,6 +62,7 @@ function App() {
         </Routes>
       </SocketProvider>
     </AuthProvider>
+  </ThemeProvider>
   );
 }
 

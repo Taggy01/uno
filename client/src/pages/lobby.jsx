@@ -337,23 +337,29 @@ export default function Lobby() {
         </Surface>
 
         {/* Lobby Chat Sidebar */}
-        <Surface className="flex flex-col h-[480px] rounded-3xl p-4 border border-neutral-800 bg-neutral-900 shadow-2xl text-left" variant="default">
-          <div className="flex items-center gap-2 pb-3 border-b border-neutral-800 text-neutral-300 font-bold text-sm">
+        <Surface
+          className="flex flex-col h-[480px] rounded-3xl p-4 border border-neutral-800 bg-neutral-950/90 shadow-2xl text-left bg-cover bg-center overflow-hidden"
+          style={{
+            backgroundImage: `linear-gradient(to bottom, rgba(12, 14, 20, 0.90), rgba(10, 12, 18, 0.95)), url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop')`,
+          }}
+          variant="default"
+        >
+          <div className="flex items-center gap-2 pb-3 border-b border-neutral-800/80 text-neutral-300 font-bold text-sm">
             <Comment className="w-4 h-4 text-blue-400" />
             <span>Lobby Chat</span>
           </div>
 
           <div className="flex-1 overflow-y-auto space-y-2 py-3 text-xs pr-1 scrollbar-thin">
             {chatMessages.length === 0 ? (
-              <div className="text-center text-neutral-500 py-16">
+              <div className="text-center text-neutral-400 py-16">
                 Say hello to your match opponents! 👋
               </div>
             ) : (
               chatMessages.map((msg) => (
-                <div key={msg.id} className="p-2 rounded-xl bg-neutral-800 border border-neutral-700/60">
+                <div key={msg.id} className="p-2.5 rounded-xl bg-neutral-900/85 backdrop-blur-md border border-neutral-750/70 shadow-sm">
                   <div className="flex justify-between items-baseline mb-0.5">
                     <span className="font-bold text-blue-300">{msg.sender}</span>
-                    <span className="text-[10px] text-neutral-500">{msg.time}</span>
+                    <span className="text-[10px] text-neutral-400">{msg.time}</span>
                   </div>
                   <p className="text-neutral-200 break-words">{msg.text}</p>
                 </div>

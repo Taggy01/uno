@@ -32,25 +32,26 @@ const COLOR_OPTIONS = [
 const QUICK_EMOJIS = ["😂", "🔥", "👏", "💀", "😱", "🤬", "🃏", "🎯", "🎉", "⚡"];
 
 /* =========================================================
-   FAN + SNAP SHUFFLE ANIMATION COMPONENT
+   CINEMATIC 3D SHUFFLE & DEAL ANIMATION COMPONENT
 ========================================================= */
 function FanSnapShuffleOverlay({ onComplete }) {
-  const [stage, setStage] = useState("fan"); // 'fan' -> 'snap' -> 'done'
-  const cardCount = 10;
+  const [stage, setStage] = useState("riffle"); // 'riffle' -> 'fan' -> 'snap' -> 'deal' -> 'done'
+  const cardCount = 12;
 
   useEffect(() => {
-    const snapTimer = setTimeout(() => {
-      setStage("snap");
-    }, 1300);
-
-    const completeTimer = setTimeout(() => {
+    const fanTimer = setTimeout(() => setStage("fan"), 900);
+    const snapTimer = setTimeout(() => setStage("snap"), 1800);
+    const dealTimer = setTimeout(() => setStage("deal"), 2300);
+    const doneTimer = setTimeout(() => {
       setStage("done");
       if (onComplete) onComplete();
-    }, 2600);
+    }, 2800);
 
     return () => {
+      clearTimeout(fanTimer);
       clearTimeout(snapTimer);
-      clearTimeout(completeTimer);
+      clearTimeout(dealTimer);
+      clearTimeout(doneTimer);
     };
   }, [onComplete]);
 
@@ -59,70 +60,103 @@ function FanSnapShuffleOverlay({ onComplete }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.3 }}
-      className="fixed inset-0 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center z-[100] pointer-events-none select-none"
+      transition={{ duration: 0.35 }}
+      className="fixed inset-0 bg-black/92 backdrop-blur-xl flex flex-col items-center justify-center z-[100] pointer-events-none select-none overflow-hidden"
     >
-      <div className="relative w-36 h-52 flex items-center justify-center">
+      {/* Ambient background glow */}
+      <div className="absolute w-96 h-96 rounded-full bg-gradient-to-tr from-red-600/30 via-amber-500/25 to-emerald-500/25 blur-[120px]" />
+
+      <div className="relative w-44 h-60 flex items-center justify-center [perspective:1200px]">
         {Array.from({ length: cardCount }).map((_, index) => {
           const mid = (cardCount - 1) / 2;
           const offset = index - mid;
-          const fanAngle = offset * 7;
-          const fanX = offset * 16;
-          const fanY = Math.abs(offset) * 4 - 10;
+          const isLeftHalf = index < cardCount / 2;
+
+          let targetX = 0;
+          let targetY = 0;
+          let targetRotate = 0;
+          let targetScale = 1;
+          let targetOpacity = 1;
+          let targetRotateY = 0;
+
+          if (stage === "riffle") {
+            const sideOffset = isLeftHalf ? -65 : 65;
+            const staggerY = (index % (cardCount / 2)) * 3;
+            targetX = sideOffset + (isLeftHalf ? (index * 6) : -(index * 6));
+            targetY = -staggerY;
+            targetRotate = isLeftHalf ? -14 + index * 2 : 14 - index * 2;
+            targetRotateY = isLeftHalf ? 20 : -20;
+          } else if (stage === "fan") {
+            targetX = offset * 18;
+            targetY = Math.abs(offset) * 4 - 14;
+            targetRotate = offset * 8.5;
+            targetScale = 1.02;
+          } else if (stage === "snap") {
+            targetX = (index % 2 === 0 ? 1 : -1) * (index * 0.3);
+            targetY = -index * 1.4;
+            targetRotate = (Math.random() - 0.5) * 4;
+            targetScale = 1;
+          } else if (stage === "deal") {
+            const angle = (index / cardCount) * 2 * Math.PI;
+            targetX = Math.cos(angle) * 380;
+            targetY = Math.sin(angle) * 380;
+            targetRotate = (index * 30) % 360;
+            targetScale = 0.5;
+            targetOpacity = 0;
+          }
 
           return (
             <motion.div
               key={index}
-              className="absolute inset-0"
-              initial={{ x: 0, y: 0, rotate: 0 }}
-              animate={
-                stage === "fan"
-                  ? {
-                      x: fanX,
-                      y: fanY,
-                      rotate: fanAngle,
-                      transition: {
-                        type: "spring",
-                        stiffness: 160,
-                        damping: 15,
-                        delay: index * 0.03,
-                      },
-                    }
-                  : {
-                      x: (index % 2 === 0 ? 1 : -1) * (index * 0.4),
-                      y: -index * 1.2,
-                      rotate: (Math.random() - 0.5) * 3,
-                      transition: {
-                        type: "spring",
-                        stiffness: 450,
-                        damping: 24,
-                        delay: (cardCount - index) * 0.015,
-                      },
-                    }
-              }
+              className="absolute inset-0 will-change-transform"
+              initial={{ x: 0, y: 0, rotate: 0, scale: 0.8, opacity: 0 }}
+              animate={{
+                x: targetX,
+                y: targetY,
+                rotate: targetRotate,
+                rotateY: targetRotateY,
+                scale: targetScale,
+                opacity: targetOpacity,
+              }}
+              transition={{
+                type: "spring",
+                stiffness: stage === "snap" ? 480 : stage === "riffle" ? 220 : 180,
+                damping: stage === "snap" ? 26 : 18,
+                delay: stage === "riffle" ? index * 0.025 : stage === "deal" ? index * 0.02 : 0,
+              }}
             >
-              <UnoCard isFaceDown size="lg" className="shadow-2xl" />
+              <UnoCard isFaceDown size="lg" className="shadow-[0_12px_32px_rgba(0,0,0,0.8)] border border-white/20" />
             </motion.div>
           );
         })}
 
         {stage === "snap" && (
           <motion.div
-            initial={{ scale: 0.8, opacity: 0.8 }}
-            animate={{ scale: 2, opacity: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-            className="absolute inset-0 rounded-3xl border-2 border-amber-400/80 pointer-events-none"
+            initial={{ scale: 0.8, opacity: 1 }}
+            animate={{ scale: 2.4, opacity: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="absolute inset-0 rounded-3xl border-2 border-amber-400 shadow-[0_0_30px_rgba(251,191,36,0.8)] pointer-events-none"
           />
         )}
       </div>
 
-      <div className="mt-10 flex flex-col items-center gap-2.5">
-        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-neutral-900 border border-white/15 shadow-xl">
-          <Sparkles className="w-4 h-4 text-amber-400" />
-          <span className="text-xs font-black tracking-wide text-neutral-100 uppercase">
-            {stage === "fan" ? "Fanning Deck..." : "Shuffling & Dealing..."}
+      <div className="mt-12 flex flex-col items-center gap-2 z-10">
+        <motion.div
+          animate={{ scale: [1, 1.04, 1] }}
+          transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+          className="flex items-center gap-2.5 px-5 py-2.5 rounded-full bg-neutral-900/90 border border-white/20 shadow-2xl backdrop-blur-md"
+        >
+          <Sparkles className="w-4 h-4 text-amber-400 animate-spin" />
+          <span className="text-xs font-black tracking-wider text-neutral-100 uppercase">
+            {stage === "riffle"
+              ? "Riffling Deck..."
+              : stage === "fan"
+              ? "Fanning Deck..."
+              : stage === "snap"
+              ? "Cutting & Stacking..."
+              : "Dealing Cards..."}
           </span>
-        </div>
+        </motion.div>
       </div>
     </motion.div>
   );
@@ -150,6 +184,8 @@ export default function GamePage() {
   const [isShuffling, setIsShuffling] = useState(true);
   const [flyingCards, setFlyingCards] = useState([]);
   const [discardImpact, setDiscardImpact] = useState(null);
+  const [specialActionFX, setSpecialActionFX] = useState(null);
+  const [opponentDrawBadges, setOpponentDrawBadges] = useState([]);
 
   // Chat & Emotes
   const [showChat, setShowChat] = useState(false);
@@ -164,6 +200,7 @@ export default function GamePage() {
   const prevTopCardRef = useRef(null);
   const prevCardCountRef = useRef(null);
   const prevTurnPlayerRef = useRef(null);
+  const prevOpponentCountsRef = useRef({});
 
   // Derived state
   const isMyTurn = gameState?.currentTurnPlayerId === user?.id && !isShuffling;
@@ -249,6 +286,40 @@ export default function GamePage() {
           color: update.topCard.color || "red",
           timestamp: Date.now(),
         });
+
+        // Trigger action card FX
+        const topVal = update.topCard.value;
+        if (topVal === "skip" || topVal === "reverse" || topVal === "draw2" || topVal === "wild4") {
+          setSpecialActionFX({
+            type: topVal,
+            color: update.topCard.color,
+            timestamp: Date.now(),
+          });
+          setTimeout(() => {
+            setSpecialActionFX((prev) => (prev?.timestamp ? null : prev));
+          }, 1500);
+        }
+
+        // Trigger opponent card play animation if played by an opponent!
+        const lastTurnId = prevTurnPlayerRef.current;
+        if (lastTurnId && lastTurnId !== user.id) {
+          const oppIdx = otherPlayers.findIndex((p) => p.id === lastTurnId);
+          const totalOpp = Math.max(1, otherPlayers.length);
+          const startX = totalOpp === 1 ? 50 : 25 + (Math.max(0, oppIdx) / Math.max(1, totalOpp - 1)) * 50;
+          const oppPlayAnimId = `opp-play-${lastTurnId}-${Date.now()}`;
+          setFlyingCards((prev) => [
+            ...prev,
+            {
+              id: oppPlayAnimId,
+              type: "opponent-play",
+              card: update.topCard,
+              startX: startX,
+            },
+          ]);
+          setTimeout(() => {
+            setFlyingCards((prev) => prev.filter((c) => c.id !== oppPlayAnimId));
+          }, 500);
+        }
       }
       prevTopCardRef.current = update?.topCard;
 
@@ -350,6 +421,49 @@ export default function GamePage() {
     }
     prevCardCountRef.current = myCards.length;
   }, [myCards, isShuffling]);
+
+  // Monitor opponent card counts to trigger opponent card draw animations
+  useEffect(() => {
+    if (!gameState?.players || isShuffling) return;
+
+    gameState.players.forEach((p) => {
+      if (p.id !== user?.id) {
+        const prevCount = prevOpponentCountsRef.current[p.id];
+        if (prevCount !== undefined && p.cardCount > prevCount) {
+          const countDiff = p.cardCount - prevCount;
+          const oppIdx = otherPlayers.findIndex((op) => op.id === p.id);
+          const totalOpp = Math.max(1, otherPlayers.length);
+          const targetX = totalOpp === 1 ? 50 : 25 + (Math.max(0, oppIdx) / Math.max(1, totalOpp - 1)) * 50;
+          const oppDrawAnimId = `opp-draw-${p.id}-${Date.now()}`;
+
+          setFlyingCards((prev) => [
+            ...prev,
+            {
+              id: oppDrawAnimId,
+              type: "opponent-draw",
+              targetX: targetX,
+              count: countDiff,
+              opponentId: p.id,
+            },
+          ]);
+
+          setOpponentDrawBadges((prev) => [
+            ...prev,
+            { id: oppDrawAnimId, opponentId: p.id, count: countDiff },
+          ]);
+
+          setTimeout(() => {
+            setFlyingCards((prev) => prev.filter((c) => c.id !== oppDrawAnimId));
+          }, 500);
+
+          setTimeout(() => {
+            setOpponentDrawBadges((prev) => prev.filter((b) => b.id !== oppDrawAnimId));
+          }, 1800);
+        }
+        prevOpponentCountsRef.current[p.id] = p.cardCount;
+      }
+    });
+  }, [gameState?.players, isShuffling, otherPlayers, user?.id]);
 
   /* =========================================================
      GAMEPLAY ACTIONS
@@ -535,23 +649,26 @@ export default function GamePage() {
   ========================================================= */
   return (
     <div
-      className={`relative min-h-[100dvh] h-[100dvh] bg-[#060608] text-white overflow-hidden flex flex-col select-none ${
-        isMyTurn ? "ring-4 ring-inset ring-emerald-500/40" : ""
+      className={`relative min-h-[100dvh] h-[100dvh] text-white overflow-hidden flex flex-col select-none bg-cover bg-center ${
+        isMyTurn ? "ring-4 ring-inset ring-emerald-500/50" : ""
       }`}
+      style={{
+        backgroundImage: `radial-gradient(ellipse at center, rgba(6, 40, 20, 0.40) 0%, rgba(3, 18, 9, 0.78) 75%, rgba(2, 10, 5, 0.92) 100%), url('https://images.unsplash.com/photo-1640606194066-fd6bdedddbb8?q=80&w=1074&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')`,
+      }}
     >
       {/* Lightweight Ambient Table Background Glow (Hardware Accelerated) */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div
-          className={`absolute -top-24 left-1/2 -translate-x-1/2 w-[600px] h-[350px] rounded-full blur-[100px] opacity-35 transition-colors duration-700 ${
+          className={`absolute -top-24 left-1/2 -translate-x-1/2 w-[600px] h-[350px] rounded-full blur-[100px] opacity-40 transition-colors duration-700 ${
             isMyTurn
-              ? "bg-emerald-500/25"
+              ? "bg-emerald-500/35"
               : activeColor === "red"
-              ? "bg-red-600/20"
+              ? "bg-red-600/25"
               : activeColor === "blue"
-              ? "bg-blue-600/20"
+              ? "bg-blue-600/25"
               : activeColor === "green"
-              ? "bg-emerald-600/20"
-              : "bg-amber-500/20"
+              ? "bg-emerald-600/30"
+              : "bg-amber-500/25"
           }`}
         />
       </div>
@@ -563,17 +680,24 @@ export default function GamePage() {
         )}
       </AnimatePresence>
 
-      {/* Flying Cards Animation Layer */}
-      <div className="fixed inset-0 pointer-events-none z-40 overflow-hidden">
+      {/* Flying Cards Animation Layer (3D Parabolic Physics) */}
+      <div className="fixed inset-0 pointer-events-none z-40 overflow-hidden [perspective:1200px]">
         {flyingCards.map((fc) => {
           if (fc.type === "draw") {
             return (
               <motion.div
                 key={fc.id}
-                initial={{ top: "45%", left: "42%", scale: 0.8, opacity: 0.9 }}
-                animate={{ top: "85%", left: "50%", scale: 1, opacity: 1 }}
-                transition={{ duration: 0.45, ease: "easeOut" }}
-                className="absolute -translate-x-1/2 -translate-y-1/2 shadow-2xl"
+                initial={{ top: "48%", left: "42%", scale: 0.75, opacity: 0.8, rotateZ: -15, rotateY: 180 }}
+                animate={{
+                  top: ["48%", "40%", "85%"],
+                  left: ["42%", "46%", "50%"],
+                  scale: [0.75, 1.15, 1.0],
+                  rotateZ: [-15, -5, 0],
+                  rotateY: [180, 90, 0],
+                  opacity: 1,
+                }}
+                transition={{ duration: 0.48, ease: "easeInOut" }}
+                className="absolute -translate-x-1/2 -translate-y-1/2 shadow-[0_16px_36px_rgba(0,0,0,0.8)] [transform-style:preserve-3d]"
               >
                 <UnoCard card={fc.card} size="md" />
               </motion.div>
@@ -583,10 +707,55 @@ export default function GamePage() {
             return (
               <motion.div
                 key={fc.id}
-                initial={{ top: "82%", left: "50%", scale: 1, opacity: 1 }}
-                animate={{ top: "45%", left: "58%", scale: 1, opacity: 1 }}
-                transition={{ duration: 0.4, ease: "easeOut" }}
-                className="absolute -translate-x-1/2 -translate-y-1/2 shadow-2xl"
+                initial={{ top: "82%", left: "50%", scale: 1.0, opacity: 0.9, rotateZ: 10 }}
+                animate={{
+                  top: ["82%", "52%", "48%"],
+                  left: ["50%", "54%", "58%"],
+                  scale: [1.0, 1.18, 1.0],
+                  rotateZ: [10, -5, 0],
+                  opacity: 1,
+                }}
+                transition={{ duration: 0.42, ease: "easeOut" }}
+                className="absolute -translate-x-1/2 -translate-y-1/2 shadow-[0_20px_40px_rgba(0,0,0,0.85)]"
+              >
+                <UnoCard card={fc.card} size="md" />
+              </motion.div>
+            );
+          }
+          if (fc.type === "opponent-draw") {
+            return (
+              <motion.div
+                key={fc.id}
+                initial={{ top: "48%", left: "42%", scale: 0.75, opacity: 0.9, rotateZ: 0 }}
+                animate={{
+                  top: ["48%", "28%", "9%"],
+                  left: ["42%", `${(42 + fc.targetX) / 2}%`, `${fc.targetX}%`],
+                  scale: [0.75, 0.6, 0.4],
+                  rotateZ: [0, 15, 0],
+                  opacity: [0.9, 1, 0],
+                }}
+                transition={{ duration: 0.48, ease: "easeInOut" }}
+                className="absolute -translate-x-1/2 -translate-y-1/2 shadow-[0_12px_28px_rgba(0,0,0,0.7)]"
+              >
+                <UnoCard isFaceDown size="md" />
+              </motion.div>
+            );
+          }
+          if (fc.type === "opponent-play") {
+            return (
+              <motion.div
+                key={fc.id}
+                initial={{ top: "9%", left: `${fc.startX}%`, scale: 0.45, opacity: 0.85, rotateZ: -20, rotateY: 180 }}
+                animate={{
+                  top: ["9%", "28%", "48%"],
+                  left: [`${fc.startX}%`, `${(fc.startX + 58) / 2}%`, "58%"],
+                  scale: [0.45, 1.15, 1.0],
+                  rotateZ: [-20, 8, 0],
+                  rotateY: [180, 90, 0],
+                  opacity: 1,
+                }}
+                transition={{ duration: 0.44, ease: "easeOut" }}
+                className="absolute -translate-x-1/2 -translate-y-1/2 shadow-[0_20px_40px_rgba(0,0,0,0.85)] [transform-style:preserve-3d]"
               >
                 <UnoCard card={fc.card} size="md" />
               </motion.div>
@@ -706,18 +875,18 @@ export default function GamePage() {
         </div>
       </header>
 
-      {/* Floating Alert Notification */}
+      {/* Floating Alert Notification (Bottom Center) */}
       <AnimatePresence>
         {alertBanner && (
           <motion.div
-            initial={{ opacity: 0, y: -15 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -15 }}
-            className="fixed top-12 left-1/2 -translate-x-1/2 z-50 pointer-events-none px-4 max-w-md w-full"
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed bottom-24 sm:bottom-28 left-1/2 -translate-x-1/2 z-50 pointer-events-none px-4 max-w-md w-full"
           >
             <Alert
               status={alertBanner.type === "danger" ? "danger" : alertBanner.type === "warning" ? "warning" : "success"}
-              className="py-2 px-3 rounded-2xl shadow-xl font-bold text-xs md:text-sm text-center"
+              className="py-2.5 px-4 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.6)] font-bold text-xs md:text-sm text-center backdrop-blur-xl border border-white/10"
             >
               {alertBanner.message}
             </Alert>
@@ -736,16 +905,33 @@ export default function GamePage() {
             const gradient = getUserGradient(p.id);
             const isUnoDanger = p.cardCount === 1 && !p.calledUno;
             const playerReaction = activeReactions.find((r) => r.senderId === p.id);
+            const playerDrawBadge = opponentDrawBadges.find((b) => b.opponentId === p.id);
 
             return (
               <div
                 key={p.id}
-                className={`relative flex-shrink-0 flex items-center gap-1.5 px-2 py-1 md:py-1.5 rounded-2xl border transition-all ${
+                className={`relative flex-shrink-0 flex items-center gap-1.5 px-2 py-1 md:py-1.5 rounded-2xl border transition-all duration-200 ${
                   isTurn
-                    ? "bg-amber-500/20 border-amber-400 ring-2 ring-amber-400/50 shadow-md"
-                    : "bg-neutral-900/90 border-neutral-800"
+                    ? "bg-amber-500/25 border-amber-400 ring-2 ring-amber-400/60 shadow-[0_0_20px_rgba(251,191,36,0.35)] scale-105"
+                    : "bg-neutral-900/90 border-neutral-800/80"
                 }`}
               >
+                {/* Floating Draw Count Badge (+1 / +2 / +4) */}
+                <AnimatePresence>
+                  {playerDrawBadge && (
+                    <motion.div
+                      key={playerDrawBadge.id}
+                      initial={{ scale: 0, y: 0, opacity: 1 }}
+                      animate={{ scale: [1, 1.25, 1], y: -26, opacity: [1, 1, 0] }}
+                      transition={{ duration: 1.2, ease: "easeOut" }}
+                      className="absolute -top-2 left-1/2 -translate-x-1/2 z-30 px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500 to-rose-600 text-white font-black text-[9px] shadow-lg border border-amber-300 pointer-events-none whitespace-nowrap"
+                    >
+                      +{playerDrawBadge.count} Cards
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Reaction Emoji */}
                 <AnimatePresence>
                   {playerReaction && (
                     <motion.div
@@ -778,10 +964,10 @@ export default function GamePage() {
                   <div className="flex items-center gap-1 text-[10px] text-neutral-400 font-semibold">
                     <span>{p.cardCount} cards</span>
                     {isTurn && (
-                      <span className="text-amber-400 text-[9px] font-bold">Thinking</span>
+                      <span className="text-amber-400 text-[9px] font-bold animate-pulse">Thinking</span>
                     )}
                     {p.calledUno && (
-                      <span className="px-1.5 py-0.2 rounded-full bg-red-600 text-white font-black text-[8px]">
+                      <span className="px-1.5 py-0.2 rounded-full bg-red-600 text-white font-black text-[8px] animate-bounce">
                         UNO!
                       </span>
                     )}
@@ -794,7 +980,7 @@ export default function GamePage() {
                     variant="primary"
                     size="sm"
                     onClick={() => handleCatchUno(p.id)}
-                    className="ml-0.5 px-2 py-0.5 rounded-lg bg-red-600 hover:bg-red-500 text-white text-[9px] font-black tracking-wider uppercase shadow-md cursor-pointer h-auto"
+                    className="ml-0.5 px-2 py-0.5 rounded-lg bg-red-600 hover:bg-red-500 text-white text-[9px] font-black tracking-wider uppercase shadow-md cursor-pointer h-auto animate-pulse"
                   >
                     🚨 Catch
                   </Button>
@@ -808,9 +994,9 @@ export default function GamePage() {
         <div className="w-full flex items-center justify-center my-0.5">
           <Chip
             size="sm"
-            className={`px-3 py-0.5 text-[11px] font-bold border ${
+            className={`px-3 py-0.5 text-[11px] font-bold border transition-all ${
               isMyTurn
-                ? "bg-emerald-500/20 border-emerald-400/60 text-emerald-300"
+                ? "bg-emerald-500/20 border-emerald-400/60 text-emerald-300 ring-2 ring-emerald-500/30"
                 : "bg-neutral-900/80 border-neutral-800 text-neutral-400"
             }`}
           >
@@ -822,50 +1008,103 @@ export default function GamePage() {
           </Chip>
         </div>
 
-        {/* Center Table Arena (Draw Deck + Discard Pile) */}
+        {/* Center Table Arena (Draw Deck + Discard Pile + Special Action FX) */}
         <div className="relative flex items-center justify-center gap-6 sm:gap-10 md:gap-14 my-auto py-1">
-          {/* Draw Deck */}
+          {/* Special Action Card Splash Overlay */}
+          <AnimatePresence>
+            {specialActionFX && (
+              <motion.div
+                initial={{ scale: 0.5, opacity: 0, rotate: -8 }}
+                animate={{ scale: [0.5, 1.25, 1], opacity: 1, rotate: 0 }}
+                exit={{ scale: 1.3, opacity: 0 }}
+                transition={{ duration: 0.35, ease: "easeOut" }}
+                className="absolute -top-12 inset-x-0 flex items-center justify-center z-40 pointer-events-none select-none"
+              >
+                {specialActionFX.type === "skip" && (
+                  <div className="flex items-center gap-2 px-5 py-2 rounded-2xl bg-rose-600/95 border-2 border-white text-white font-black text-sm md:text-base shadow-[0_0_35px_rgba(244,63,94,0.9)] backdrop-blur-md">
+                    <span>🚫</span>
+                    <span>TURN SKIPPED!</span>
+                  </div>
+                )}
+                {specialActionFX.type === "reverse" && (
+                  <div className="flex items-center gap-2 px-5 py-2 rounded-2xl bg-amber-500/95 border-2 border-white text-black font-black text-sm md:text-base shadow-[0_0_35px_rgba(245,158,11,0.9)] backdrop-blur-md">
+                    <span>🔄</span>
+                    <span>DIRECTION REVERSED!</span>
+                  </div>
+                )}
+                {specialActionFX.type === "draw2" && (
+                  <div className="flex items-center gap-2 px-5 py-2 rounded-2xl bg-gradient-to-r from-amber-500 to-rose-600 border-2 border-white text-white font-black text-sm md:text-base shadow-[0_0_35px_rgba(239,68,68,0.9)] backdrop-blur-md">
+                    <span>🔥</span>
+                    <span>+2 CARDS PENALTY!</span>
+                  </div>
+                )}
+                {specialActionFX.type === "wild4" && (
+                  <div className="flex items-center gap-2 px-5 py-2 rounded-2xl bg-gradient-to-r from-red-600 via-yellow-500 to-blue-600 border-2 border-white text-white font-black text-sm md:text-base shadow-[0_0_45px_rgba(255,255,255,0.9)] backdrop-blur-md">
+                    <span>⚡</span>
+                    <span>+4 WILD ATTACK!</span>
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* 3D Physical Stacked Draw Deck */}
           <div className="flex flex-col items-center gap-1">
             <div
               onClick={handleDraw}
-              className={`relative cursor-pointer transition-transform active:scale-95 ${
+              className={`relative cursor-pointer transition-transform duration-150 active:scale-95 group ${
                 isMyTurn && !hasPlayableCard
-                  ? "ring-4 ring-emerald-400/80 rounded-2xl shadow-[0_0_18px_rgba(16,185,129,0.5)]"
+                  ? "ring-4 ring-emerald-400/80 rounded-2xl shadow-[0_0_24px_rgba(16,185,129,0.6)] animate-pulse"
                   : isMyTurn
                   ? "ring-2 ring-emerald-400/50 rounded-2xl"
                   : ""
               }`}
             >
-              <div className="absolute inset-0 translate-x-1 translate-y-1 rounded-2xl bg-neutral-900 border border-neutral-700 opacity-60" />
-              <UnoCard isFaceDown size="md" />
+              {/* Stack depth layers */}
+              <div className="absolute inset-0 translate-x-2.5 translate-y-2.5 rounded-2xl bg-neutral-950 border border-neutral-800 opacity-40 shadow-md" />
+              <div className="absolute inset-0 translate-x-1.5 translate-y-1.5 rounded-2xl bg-neutral-900 border border-neutral-750 opacity-70 shadow-md" />
+              <div className="absolute inset-0 translate-x-0.5 translate-y-0.5 rounded-2xl bg-neutral-850 border border-neutral-700 opacity-90" />
+              <UnoCard isFaceDown size="md" className="relative z-10 group-hover:-translate-y-1 transition-transform" />
             </div>
             <span className="text-[10px] md:text-[11px] font-bold text-neutral-300">
               Draw Deck ({gameState.deckRemaining ?? 108})
             </span>
           </div>
 
-          {/* Active Discard Pile */}
+          {/* Active Discard Pile with Multi-layer Shockwaves */}
           <div className="flex flex-col items-center gap-1">
             <div className="relative">
-              <UnoCard card={gameState.topCard} size="md" />
+              {/* Physical card shadow pile underneath */}
+              <div className="absolute inset-0 translate-x-1 translate-y-1 rotate-3 rounded-2xl bg-neutral-900/60 border border-black/30 pointer-events-none" />
+              <div className="relative z-10">
+                <UnoCard card={gameState.topCard} size="md" />
+              </div>
+
+              {/* Multi-layered Color Impact Shockwave */}
               {discardImpact && (
-                <div
-                  key={discardImpact.timestamp}
-                  className={`absolute inset-0 rounded-2xl border-2 pointer-events-none animate-ping ${
-                    discardImpact.color === "red"
-                      ? "border-red-500"
-                      : discardImpact.color === "blue"
-                      ? "border-blue-500"
-                      : discardImpact.color === "green"
-                      ? "border-emerald-500"
-                      : "border-amber-400"
-                  }`}
-                />
+                <>
+                  <div
+                    key={`impact-1-${discardImpact.timestamp}`}
+                    className={`absolute inset-0 rounded-2xl border-2 pointer-events-none animate-ping ${
+                      discardImpact.color === "red"
+                        ? "border-red-500 shadow-[0_0_20px_#ef4444]"
+                        : discardImpact.color === "blue"
+                        ? "border-blue-500 shadow-[0_0_20px_#3b82f6]"
+                        : discardImpact.color === "green"
+                        ? "border-emerald-500 shadow-[0_0_20px_#10b981]"
+                        : "border-amber-400 shadow-[0_0_20px_#f59e0b]"
+                    }`}
+                  />
+                  <div
+                    key={`impact-2-${discardImpact.timestamp}`}
+                    className="absolute -inset-2 rounded-3xl border border-white/60 pointer-events-none animate-ping opacity-60"
+                  />
+                </>
               )}
             </div>
             <div className="flex items-center gap-1.5 text-[10px] md:text-[11px] font-bold text-neutral-300">
               <span>Color:</span>
-              <span className={`w-3 h-3 rounded-full ${activeColorBg} shadow-sm`} />
+              <span className={`w-3 h-3 rounded-full ${activeColorBg} shadow-[0_0_8px_currentColor]`} />
               <span className="capitalize font-black text-white">{activeColor}</span>
             </div>
           </div>
@@ -1109,9 +1348,12 @@ export default function GamePage() {
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ duration: 0.25, ease: "easeOut" }}
-            className="fixed top-11 bottom-0 right-0 w-full sm:w-80 bg-neutral-900/95 backdrop-blur-xl border-l border-neutral-800 z-40 flex flex-col shadow-2xl"
+            className="fixed top-11 bottom-0 right-0 w-full sm:w-80 bg-neutral-950/95 backdrop-blur-2xl border-l border-neutral-800 z-40 flex flex-col shadow-2xl bg-cover bg-center overflow-hidden"
+            style={{
+              backgroundImage: `linear-gradient(to bottom, rgba(10, 12, 18, 0.90), rgba(10, 12, 18, 0.95)), url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop')`,
+            }}
           >
-            <div className="flex items-center justify-between px-4 py-2.5 border-b border-neutral-800">
+            <div className="flex items-center justify-between px-4 py-2.5 border-b border-neutral-800/80 bg-neutral-900/60 backdrop-blur-md">
               <div className="flex items-center gap-2">
                 <Comment className="w-4 h-4 text-blue-400" />
                 <span className="font-bold text-sm text-neutral-200">Table Chat</span>
@@ -1127,9 +1369,9 @@ export default function GamePage() {
               </Button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-2.5">
+            <div className="flex-1 overflow-y-auto p-4 space-y-2.5 scrollbar-thin">
               {chatMessages.length === 0 ? (
-                <div className="text-center text-xs text-neutral-500 my-auto py-12">
+                <div className="text-center text-xs text-neutral-400 my-auto py-12">
                   No messages yet. Send a greeting!
                 </div>
               ) : (
@@ -1142,10 +1384,10 @@ export default function GamePage() {
                     >
                       <span className="text-[10px] text-neutral-400 font-semibold mb-0.5">{m.sender}</span>
                       <div
-                        className={`px-3 py-1.5 rounded-2xl text-xs max-w-[85%] break-words ${
+                        className={`px-3 py-1.5 rounded-2xl text-xs max-w-[85%] break-words shadow-md backdrop-blur-md ${
                           isSelf
-                            ? "bg-blue-600 text-white rounded-tr-none"
-                            : "bg-neutral-800 text-neutral-200 rounded-tl-none border border-neutral-700/60"
+                            ? "bg-blue-600/90 text-white rounded-tr-none border border-blue-400/30"
+                            : "bg-neutral-850/85 text-neutral-200 rounded-tl-none border border-neutral-700/60"
                         }`}
                       >
                         {m.text}
@@ -1157,7 +1399,7 @@ export default function GamePage() {
               <div ref={chatEndRef} />
             </div>
 
-            <form onSubmit={handleSendChat} className="p-2.5 border-t border-neutral-800 flex gap-2">
+            <form onSubmit={handleSendChat} className="p-2.5 border-t border-neutral-800/80 bg-neutral-900/60 backdrop-blur-md flex gap-2">
               <input
                 type="text"
                 value={chatInput}

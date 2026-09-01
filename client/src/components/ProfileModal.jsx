@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button, Card, Chip, Alert, Typography } from '@heroui/react';
-import { Xmark, Lock, CircleInfo } from '@gravity-ui/icons';
+import { Xmark, Lock, CircleInfo, Eye, EyeSlash } from '@gravity-ui/icons';
 import { useAuth } from '../context/AuthContext';
 import { getUserGradient } from '../Gradient/gradient';
 
@@ -10,6 +10,9 @@ export default function ProfileModal({ isOpen, onClose }) {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showCurrentPass, setShowCurrentPass] = useState(false);
+  const [showNewPass, setShowNewPass] = useState(false);
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -159,14 +162,23 @@ export default function ProfileModal({ isOpen, onClose }) {
                       <label className="text-[11px] font-semibold text-neutral-400 block mb-1">
                         Current Password
                       </label>
-                      <input
-                        type="password"
-                        required
-                        value={currentPassword}
-                        onChange={(e) => setCurrentPassword(e.target.value)}
-                        placeholder="Enter current password"
-                        className="w-full px-3.5 py-2.5 bg-neutral-800/90 border border-neutral-700 rounded-xl text-white text-xs focus:outline-none focus:border-blue-500 transition-colors"
-                      />
+                      <div className="relative">
+                        <input
+                          type={showCurrentPass ? "text" : "password"}
+                          required
+                          value={currentPassword}
+                          onChange={(e) => setCurrentPassword(e.target.value)}
+                          placeholder="Enter current password"
+                          className="w-full px-3.5 py-2.5 pr-9 bg-neutral-800/90 border border-neutral-700 rounded-xl text-white text-xs focus:outline-none focus:border-blue-500 transition-colors"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowCurrentPass(!showCurrentPass)}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-200 transition-colors cursor-pointer p-0.5"
+                        >
+                          {showCurrentPass ? <EyeSlash className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        </button>
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -174,30 +186,48 @@ export default function ProfileModal({ isOpen, onClose }) {
                         <label className="text-[11px] font-semibold text-neutral-400 block mb-1">
                           New Password
                         </label>
-                        <input
-                          type="password"
-                          required
-                          minLength={8}
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
-                          placeholder="Min. 8 characters"
-                          className="w-full px-3.5 py-2.5 bg-neutral-800/90 border border-neutral-700 rounded-xl text-white text-xs focus:outline-none focus:border-blue-500 transition-colors"
-                        />
+                        <div className="relative">
+                          <input
+                            type={showNewPass ? "text" : "password"}
+                            required
+                            minLength={8}
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            placeholder="Min. 8 characters"
+                            className="w-full px-3.5 py-2.5 pr-9 bg-neutral-800/90 border border-neutral-700 rounded-xl text-white text-xs focus:outline-none focus:border-blue-500 transition-colors"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowNewPass(!showNewPass)}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-200 transition-colors cursor-pointer p-0.5"
+                          >
+                            {showNewPass ? <EyeSlash className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
                       </div>
 
                       <div>
                         <label className="text-[11px] font-semibold text-neutral-400 block mb-1">
                           Confirm New Password
                         </label>
-                        <input
-                          type="password"
-                          required
-                          minLength={8}
-                          value={confirmPassword}
-                          onChange={(e) => setConfirmPassword(e.target.value)}
-                          placeholder="Repeat new password"
-                          className="w-full px-3.5 py-2.5 bg-neutral-800/90 border border-neutral-700 rounded-xl text-white text-xs focus:outline-none focus:border-blue-500 transition-colors"
-                        />
+                        <div className="relative">
+                          <input
+                            type={showConfirmPass ? "text" : "password"}
+                            required
+                            minLength={8}
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            placeholder="Repeat new password"
+                            className="w-full px-3.5 py-2.5 pr-9 bg-neutral-800/90 border border-neutral-700 rounded-xl text-white text-xs focus:outline-none focus:border-blue-500 transition-colors"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirmPass(!showConfirmPass)}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-200 transition-colors cursor-pointer p-0.5"
+                          >
+                            {showConfirmPass ? <EyeSlash className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
                       </div>
                     </div>
 

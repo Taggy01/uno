@@ -1,12 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button, Card, Chip, Typography } from "@heroui/react";
+import { motion, AnimatePresence } from "framer-motion";
 import AllRoomCard from "../components/allRoomCard";
 import JoinCard from "../components/joinCard";
 import Navbar from "../components/navbar";
 import SingleplayerModal from "../components/SingleplayerModal";
 import CreateRoomModal from "../components/CreateRoomModal";
 import { useAuth } from "../context/AuthContext";
-import { PlayFill, Plus, Globe, Persons, Cpu } from "@gravity-ui/icons";
+import { PlayFill, Plus, Globe, Persons, Cpu, ArrowDown, ArrowUp } from "@gravity-ui/icons";
 
 export default function Homepage() {
   const { user, updateUsername } = useAuth();
@@ -14,6 +15,27 @@ export default function Homepage() {
   const [nameInput, setNameInput] = useState(user?.username || 'Player');
   const [showSoloModal, setShowSoloModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isNearBottom, setIsNearBottom] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY || document.documentElement.scrollTop;
+      const windowHeight = window.innerHeight;
+      const docHeight = document.documentElement.scrollHeight;
+      setIsNearBottom(scrollY + windowHeight >= docHeight - 120);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const handleScrollToggle = () => {
+    if (isNearBottom) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' });
+    }
+  };
 
   const handleNameSave = (e) => {
     e.preventDefault();
@@ -166,6 +188,27 @@ export default function Homepage() {
           <AllRoomCard />
         </div>
       </main>
+
+      {/* Floating Scroll to Bottom / Top Button (Mobile Only) */}
+      <motion.button
+        type="button"
+        whileTap={{ scale: 0.9 }}
+        onClick={handleScrollToggle}
+        className="fixed bottom-6 right-5 z-40 sm:hidden flex items-center justify-center gap-1 px-3.5 py-2.5 rounded-full bg-blue-600/90 hover:bg-blue-500 text-white font-bold text-xs shadow-[0_4px_20px_rgba(37,99,235,0.45)] border border-blue-400/40 backdrop-blur-md cursor-pointer transition-all active:scale-95"
+        title={isNearBottom ? "Scroll to top" : "Scroll to rooms"}
+      >
+        {isNearBottom ? (
+          <>
+            <ArrowUp className="w-4 h-4" />
+            <span>Top</span>
+          </>
+        ) : (
+          <>
+            <ArrowDown className="w-4 h-4 animate-bounce" />
+            <span>Rooms</span>
+          </>
+        )}
+      </motion.button>
 
       {/* Modals */}
       <SingleplayerModal
