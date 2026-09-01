@@ -22,8 +22,6 @@ export function setupSocketHandlers(io) {
   });
 
   io.on('connection', (socket) => {
-    // console.log(`Socket connected: ${socket.id}`);
-
     // Join Room
     socket.on('join_room', ({ roomCode, user }) => {
       try {

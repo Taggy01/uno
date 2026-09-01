@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
-import { Button, Typography, Surface, Alert } from '@heroui/react';
+import {
+  Button,
+  Typography,
+  Surface,
+  Alert,
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSeparator,
+  InputOTPSlot,
+} from '@heroui/react';
 import { CircleCheckFill, Sparkles, CircleInfo } from '@gravity-ui/icons';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -34,7 +43,9 @@ export default function SignUp() {
   };
 
   const handleVerifyOtp = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
+    if (otp.length !== 6) return;
+
     setError('');
     setLoading(true);
 
@@ -106,6 +117,8 @@ export default function SignUp() {
               <input
                 type="text"
                 required
+                minLength={2}
+                maxLength={30}
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="e.g. MasterGamer"
@@ -145,7 +158,7 @@ export default function SignUp() {
                 disabled={loading}
                 className="w-1/2 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-md h-auto"
               >
-                <span>{loading ? 'Sending OTP...' : 'Continue →'}</span>
+                <span>{loading ? 'Sending Code...' : 'Send OTP →'}</span>
               </Button>
               <Button
                 type="button"
@@ -171,25 +184,41 @@ export default function SignUp() {
             </div>
           </form>
         ) : (
-          <form onSubmit={handleVerifyOtp} className="flex flex-col gap-4 text-left">
-            <div>
-              <label className="text-xs font-semibold text-neutral-300 block mb-1">6-Digit Email Code</label>
-              <input
-                type="text"
-                required
-                maxLength={6}
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                placeholder="123456"
-                className="w-full px-4 py-3.5 bg-neutral-800/90 border border-neutral-700 rounded-2xl text-white font-mono text-center tracking-widest text-xl focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-                autoFocus
-              />
-              <p className="text-[11px] text-neutral-500 mt-1.5">
-                Check your email inbox or spam folder for the 6-digit verification code.
+          <form onSubmit={handleVerifyOtp} className="flex flex-col gap-5 text-left">
+            <div className="flex flex-col items-center">
+              <label className="text-xs font-semibold text-neutral-300 block mb-3 text-center">
+                Enter 6-Digit Code
+              </label>
+
+              {/* HeroUI InputOTP Component */}
+              <div className="flex justify-center my-2">
+                <InputOTP
+                  maxLength={6}
+                  value={otp}
+                  onChange={(val) => setOtp(val)}
+                  autoFocus
+                  className="gap-2"
+                >
+                  <InputOTPGroup className="gap-1.5">
+                    <InputOTPSlot index={0} className="w-11 h-13 rounded-xl border border-neutral-700 bg-neutral-800 text-lg font-bold text-white text-center focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+                    <InputOTPSlot index={1} className="w-11 h-13 rounded-xl border border-neutral-700 bg-neutral-800 text-lg font-bold text-white text-center focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+                    <InputOTPSlot index={2} className="w-11 h-13 rounded-xl border border-neutral-700 bg-neutral-800 text-lg font-bold text-white text-center focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+                  </InputOTPGroup>
+                  <InputOTPSeparator className="text-neutral-500 text-lg font-bold mx-1" />
+                  <InputOTPGroup className="gap-1.5">
+                    <InputOTPSlot index={3} className="w-11 h-13 rounded-xl border border-neutral-700 bg-neutral-800 text-lg font-bold text-white text-center focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+                    <InputOTPSlot index={4} className="w-11 h-13 rounded-xl border border-neutral-700 bg-neutral-800 text-lg font-bold text-white text-center focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+                    <InputOTPSlot index={5} className="w-11 h-13 rounded-xl border border-neutral-700 bg-neutral-800 text-lg font-bold text-white text-center focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+                  </InputOTPGroup>
+                </InputOTP>
+              </div>
+
+              <p className="text-[11px] text-neutral-400 text-center mt-2">
+                Check your email inbox or spam folder for the 6-digit code.
               </p>
             </div>
 
-            <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center justify-between text-xs pt-1">
               <Button
                 type="button"
                 variant="tertiary"

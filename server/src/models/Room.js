@@ -60,7 +60,6 @@ export class Room {
 
     const removed = this.players.splice(index, 1)[0];
 
-    // If host left, assign new host if any human players exist
     if (removed.isHost && this.players.length > 0) {
       const nextHuman = this.players.find((p) => !p.isBot) || this.players[0];
       nextHuman.isHost = true;

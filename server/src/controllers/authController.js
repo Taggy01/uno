@@ -10,7 +10,7 @@ export async function sendOtp(req, res) {
     const { username, email, password } = req.body;
 
     if (!username || !email || !password) {
-      return res.status(400).json({ success: false, message: 'All fields are required' });
+      return res.status(400).json({ success: false, message: 'All fields (username, email, password) are required' });
     }
 
     const trimmedUsername = username.trim();
@@ -46,7 +46,7 @@ export async function sendOtp(req, res) {
       password,
     });
 
-    // Send Real Email OTP
+    // Send Real Email OTP via Mailgun
     await sendOtpEmail(cleanEmail, otp, trimmedUsername);
 
     return res.status(200).json({
@@ -58,13 +58,12 @@ export async function sendOtp(req, res) {
   }
 }
 
-
 export async function verifyOtpAndSignup(req, res) {
   try {
     const { email, otp } = req.body;
 
     if (!email || !otp) {
-      return res.status(400).json({ success: false, message: 'Email and OTP are required' });
+      return res.status(400).json({ success: false, message: 'Email and OTP code are required' });
     }
 
     const cleanEmail = email.toLowerCase().trim();
@@ -114,7 +113,7 @@ export async function verifyOtpAndSignup(req, res) {
 }
 
 export async function signup(req, res) {
-  // Legacy / Direct signup fallback
+  // Routes to sendOtp for OTP verification workflow
   return sendOtp(req, res);
 }
 
@@ -228,7 +227,6 @@ export async function changePassword(req, res) {
     if (user.save) {
       await user.save();
     } else {
-      // In-memory update
       const bcrypt = (await import('bcryptjs')).default;
       const salt = await bcrypt.genSalt(10);
       user.password = await bcrypt.hash(newPassword, salt);
@@ -242,4 +240,3 @@ export async function changePassword(req, res) {
     return res.status(500).json({ success: false, message: error.message || 'Failed to change password' });
   }
 }
-

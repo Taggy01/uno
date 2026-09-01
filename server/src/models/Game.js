@@ -10,6 +10,7 @@ export class Game {
       isBot: Boolean(p.isBot),
       cards: [],
       calledUno: false,
+      oneCardTimestamp: null,
       hasDrawnThisTurn: false,
       score: 0,
     }));
@@ -33,7 +34,7 @@ export class Game {
       text: message,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
     });
-    if (this.logs.length > 25) this.logs.pop();
+    if (this.logs.length > 30) this.logs.pop();
   }
 
   init() {
@@ -43,6 +44,7 @@ export class Game {
     for (const player of this.players) {
       player.cards = this.deck.draw(7);
       player.calledUno = false;
+      player.oneCardTimestamp = null;
       player.hasDrawnThisTurn = false;
     }
 
@@ -60,7 +62,8 @@ export class Game {
 
     // Apply first card effect if action card
     if (firstCard.value === 'skip') {
-      this.addLog(`${this.getCurrentPlayer().username} was skipped by initial card!`);
+      const cur = this.getCurrentPlayer();
+      if (cur) this.addLog(`${cur.username} was skipped by initial card!`);
       this.advanceTurn(1);
     } else if (firstCard.value === 'reverse') {
       if (this.players.length === 2) {
@@ -73,9 +76,11 @@ export class Game {
       }
     } else if (firstCard.value === 'draw2') {
       const target = this.getCurrentPlayer();
-      const drawn = this.drawCardsForPlayer(target, 2);
-      this.addLog(`${target.username} drew 2 cards from initial card and turn skipped!`);
-      this.advanceTurn(1);
+      if (target) {
+        this.drawCardsForPlayer(target, 2);
+        this.addLog(`${target.username} drew 2 cards from initial card and turn skipped!`);
+        this.advanceTurn(1);
+      }
     }
 
     this.resetTurnFlags();
@@ -86,7 +91,7 @@ export class Game {
   }
 
   getCurrentPlayer() {
-    return this.players[this.currentTurnIndex];
+    return this.players[this.currentTurnIndex % this.players.length];
   }
 
   resetTurnFlags() {
@@ -108,7 +113,7 @@ export class Game {
 
   ensureDeckHasCards(needed = 1) {
     if (this.deck.remaining < needed) {
-      if (this.discardPile.length <= 1) return; // Cannot reshuffle if only top card
+      if (this.discardPile.length <= 1) return;
       const top = this.discardPile.pop();
       const recycledCards = this.discardPile.splice(0, this.discardPile.length);
       this.deck.addCards(recycledCards);
@@ -121,9 +126,11 @@ export class Game {
     this.ensureDeckHasCards(count);
     const drawn = this.deck.draw(count);
     player.cards.push(...drawn);
-    // Reset UNO call state if player had called Uno and gets more cards
     if (player.cards.length > 1) {
       player.calledUno = false;
+      player.oneCardTimestamp = null;
+    } else if (player.cards.length === 1 && !player.oneCardTimestamp) {
+      player.oneCardTimestamp = Date.now();
     }
     return drawn;
   }
@@ -133,7 +140,7 @@ export class Game {
     if (card.color === 'wild' || card.value === 'wild' || card.value === 'wild4') {
       return true;
     }
-    return card.color === this.activeColor || card.value === this.topCard.value;
+    return card.color === this.activeColor || card.value === this.topCard?.value;
   }
 
   playCard(playerId, cardId, chosenColor) {
@@ -163,7 +170,7 @@ export class Game {
       this.activeColor = card.color;
     }
 
-    // Remove from player hand and add to discard pile
+    // Remove from player hand and push to discard pile
     player.cards.splice(cardIndex, 1);
     this.discardPile.push(card);
 
@@ -173,13 +180,10 @@ export class Game {
     }
     this.addLog(logMsg);
 
-    // Check Uno call warning: if player has 1 card left and didn't call Uno
-    if (player.cards.length === 1 && !player.calledUno) {
-      // Player has a grace window or can be caught!
-    }
-
-    // Check Win condition
-    if (player.cards.length === 0) {
+    // Track 1 card state
+    if (player.cards.length === 1) {
+      player.oneCardTimestamp = Date.now();
+    } else if (player.cards.length === 0) {
       this.status = 'ended';
       this.winner = {
         id: player.id,
@@ -188,6 +192,9 @@ export class Game {
       };
       this.addLog(`🎉 ${player.username} WON THE GAME! 🎉`);
       return { success: true, winner: this.winner, card };
+    } else {
+      player.calledUno = false;
+      player.oneCardTimestamp = null;
     }
 
     // Action Card Effects
@@ -278,9 +285,10 @@ export class Game {
     const player = this.players.find((p) => p.id === playerId);
     if (!player) return { success: false, error: 'Player not found' };
 
+    // Strictly when exactly 1 card is left
     if (player.cards.length === 1) {
       player.calledUno = true;
-      this.addLog(`📢 ${player.username} CALLED UNO! 🚨`);
+      this.addLog(`📢 ${player.username} SHOUTED UNO! 🚨`);
       return { success: true, username: player.username };
     }
 
@@ -293,9 +301,14 @@ export class Game {
 
     if (!target) return { success: false, error: 'Target player not found' };
 
-    // If target has exactly 1 card and has NOT called UNO
     if (target.cards.length === 1 && !target.calledUno) {
+      // Grace period of 4 seconds so human has time to click UNO
+      if (caller && caller.isBot && target.oneCardTimestamp && Date.now() - target.oneCardTimestamp < 4000) {
+        return { success: false, error: 'Player is still within UNO call grace period.' };
+      }
+
       this.drawCardsForPlayer(target, 2);
+      target.oneCardTimestamp = null;
       this.addLog(`🚨 ${caller ? caller.username : 'Someone'} caught ${target.username} not saying UNO! +2 Cards penalty!`);
       return { success: true, targetName: target.username };
     }
@@ -303,7 +316,6 @@ export class Game {
     return { success: false, error: `${target.username} has either called UNO or does not have 1 card!` };
   }
 
-  // Returns view for a specific player (hiding others' cards for anti-cheat)
   getState(forPlayerId) {
     return {
       roomCode: this.roomCode,
@@ -324,7 +336,7 @@ export class Game {
         isBot: p.isBot,
         cardCount: p.cards.length,
         calledUno: p.calledUno,
-        // Only return card details if this is the player's own perspective
+        oneCardTimestamp: p.oneCardTimestamp,
         cards: p.id === forPlayerId ? p.cards : undefined,
       })),
     };

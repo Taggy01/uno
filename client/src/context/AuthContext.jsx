@@ -34,11 +34,11 @@ export function AuthProvider({ children }) {
     }
   }, [token]);
 
-  const login = async (email, password) => {
+  const login = async (emailOrUsername, password) => {
     const res = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email: emailOrUsername, password }),
     });
     const data = await res.json();
     if (!res.ok || !data.success) {
@@ -49,10 +49,6 @@ export function AuthProvider({ children }) {
     return data.user;
   };
 
-  const signup = async (username, email, password) => {
-    return sendOtp(username, email, password);
-  };
-
   const sendOtp = async (username, email, password) => {
     const res = await fetch('/api/auth/send-otp', {
       method: 'POST',
@@ -61,11 +57,10 @@ export function AuthProvider({ children }) {
     });
     const data = await res.json();
     if (!res.ok || !data.success) {
-      throw new Error(data.message || 'Failed to send OTP');
+      throw new Error(data.message || 'Failed to send verification code');
     }
     return data;
   };
-
 
   const verifyOtpAndSignup = async (email, otp) => {
     const res = await fetch('/api/auth/verify-otp', {
@@ -80,6 +75,10 @@ export function AuthProvider({ children }) {
     setUser(data.user);
     setToken(data.token);
     return data.user;
+  };
+
+  const signup = async (username, email, password) => {
+    return sendOtp(username, email, password);
   };
 
   const changePassword = async (currentPassword, newPassword) => {
@@ -154,7 +153,6 @@ export function AuthProvider({ children }) {
     localStorage.removeItem('uno_token');
   };
 
-
   return (
     <AuthContext.Provider
       value={{
@@ -181,4 +179,3 @@ export function AuthProvider({ children }) {
 export function useAuth() {
   return useContext(AuthContext);
 }
-

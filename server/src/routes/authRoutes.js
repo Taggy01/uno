@@ -13,4 +13,3 @@ router.get('/me', authMiddleware, getProfile);
 router.post('/change-password', authMiddleware, changePassword);
 
 export default router;
-
